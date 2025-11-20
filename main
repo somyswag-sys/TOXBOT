@@ -1,1 +1,211 @@
+# zennix_tox_bot_console.py
+import requests
+import sys
+import time
+import os
+import platform
+import random
+import keyboard
+import threading
 
+# ===== ТВОИ СООБЩЕНИЯ =====
+MESSAGES = [
+("у тебя ммть шлюхв", 0.8),
+("я кнк месник", 0.8),
+("ей руки отрезал", 0.8),
+("верещтт свинка хоххлятская", 0.8),
+("у тебя бктя будист", 0.8),
+("на флейте хуярит", 0.8),
+("я ему флейту в жопу вставил", 0.8),
+("норм ты ебанная чибурашка", 0.8),
+("клапоухий пидор", 0.8),
+("за уши тебя брал бомжа", 0.8),
+("педик волосатый", 0.8),
+("пинок под жопу дам те", 0.8),
+("в клетку улетишь", 0.8),
+("на огороде", 0.8),
+("жопой коноплю собираешь", 0.8),
+("дырявый", 0.8),
+("петух", 0.8),
+("норм ты с мультика збежал", 0.8),
+("кусок говна", 0.8),
+("ебанный ледниковый период", 0.8),
+("сид обосранный", 0.8),
+("клыкастый я тебе с хуя зубы выбил", 0.8),
+("а бля забыл у тя цыганский род же", 0.8),
+("метка на лбу красная", 0.8),
+("че за хуйня хуесос", 0.8),
+("я тупо с дартца ебанного те голову проломал", 0.8),
+("ебанный индеец", 0.8),
+("у тя мамка в копьем в жопе танцует", 0.8),
+
+]
+
+current_user = "unknown"
+spam_running = False
+stop_event = threading.Event()
+
+def clear_screen():
+    os.system("cls" if platform.system() == "Windows" else "clear")
+
+def type_effect(text, delay=0.04):
+    for ch in text:
+        print(ch, end="", flush=True)
+        time.sleep(delay)
+    print()
+
+def progress_bar(task_name="Loading"):
+    print(f">>> {task_name}")
+    percent = 0
+    while percent < 100:
+        percent += random.randint(2, 5)
+        if percent > 100: percent = 100
+        print(f"\r[{percent:>3}%] ", end="", flush=True)
+        time.sleep(random.uniform(0.02, 0.09))
+    print("\r[100%] \n")
+
+def countdown():
+    print()
+    for i in range(5, 0, -1):
+        print(f"          {i}", flush=True)
+        time.sleep(1)
+    type_effect("          Старт Софта", 0.08)
+    time.sleep(0.6)
+    clear_screen()
+
+def spam_worker():
+    global spam_running
+    if spam_running:
+        return
+    spam_running = True
+    stop_event.clear()
+    
+    countdown()
+    print("Спамим в активное окно")
+    print("F7 — запустить снова | F8 — остановить\n")
+    
+    while not stop_event.is_set():
+        for text, delay in MESSAGES:
+            if stop_event.is_set():
+                break
+            keyboard.write(text)
+            keyboard.press_and_release("enter")
+            time.sleep(delay)
+    
+    spam_running = False
+    type_effect("Остановлено.", 0.05)
+
+def start_spam_hotkey():
+    if not spam_running:
+        threading.Thread(target=spam_worker, daemon=True).start()
+
+def stop_spam_hotkey():
+    stop_event.set()
+
+# === ГОРЯЧИЕ КЛАВИШИ ===
+keyboard.add_hotkey('f7', start_spam_hotkey)
+keyboard.add_hotkey('f8', stop_spam_hotkey)
+
+def stylish_intro():
+    clear_screen()
+    type_effect(">>> Starting Zennix Tox Bot...", 0.05)
+    progress_bar("Loading Core Modules")
+    progress_bar("Initializing System")
+    progress_bar("Preparing Keyboard Hook")
+    type_effect("Zennix Tox Bot Ready.", 0.05)
+    print("="*60)
+    type_effect(f"Добро пожаловать, [{current_user}]", 0.04)
+    type_effect("Горячие клавиши: F7 — старт спама | F8 — стоп", 0.04)
+    print("="*60 + "\n")
+
+def fetch_credentials():
+    try:
+        resp = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic", timeout=5)
+        resp.raise_for_status()
+        creds = {}
+        for line in resp.text.strip().splitlines():
+            if ":" in line:
+                name, pwd = line.split(":", 1)
+                creds[name.strip()] = pwd.strip()
+        return creds
+    except:
+        return {"zennix": "1488", "admin": "tox"}
+
+def login_system(creds):
+    global current_user
+    print("Вход в систему")
+    print("-" * 30)
+    for _ in range(3):
+        user = input("Логин: ").strip()
+        pwd = input("Пароль: ").strip()
+        if user in creds and creds[user] == pwd:
+            current_user = user
+            type_effect("Доступ разрешён", 0.05)
+            return True
+        else:
+            print("Неверно\n")
+    print("Пошёл нахуй.")
+    return False
+
+def add_message():
+    clear_screen()
+    print("Добавить сообщение\n")
+    text = input("Текст: ").strip()
+    if not text:
+        print("Отмена.")
+        time.sleep(1)
+        return
+    MESSAGES.append((text, 0.8))
+    type_effect(f"Добавлено: \"{text}\"", 0.05)
+    time.sleep(1.5)
+
+def tox_menu():
+    while True:
+        clear_screen()
+        print("=== ZENNIX TOX BOT ===")
+        print("1. Discord")
+        print("2. Telegram")
+        print("3. Добавить сообщение")
+        print("4. Назад")
+        print("\nИли просто нажми F7 — и спам начнётся сразу")
+        choice = input("\nВыбор: ").strip()
+
+        if choice == "1":
+            print("\nГотов к спаму. Нажми F7 для запуска.")
+            input("Нажми Enter, когда переключишься в чат...")
+            
+        elif choice == "2":
+            clear_screen()
+            type_effect("Telegram модуль в разработке...", 0.06)
+            time.sleep(2)
+
+        elif choice == "3":
+            add_message()
+
+        elif choice == "4":
+            return
+
+def main():
+    global current_user
+    creds = fetch_credentials()
+    if login_system(creds):
+        stylish_intro()
+        print("Теперь ты можешь просто свернуть консоль — и жать F7/F8 в любой момент\n")
+        input("Нажми Enter для входа в меню...")
+        
+        while True:
+            clear_screen()
+            print("=== ГЛАВНОЕ МЕНЮ ===")
+            print("1. Zennix Tox Bot")
+            print("2. Выход")
+            print("\nF7 = запуск спама | F8 = стоп")
+            ch = input("\nВыбор: ")
+            if ch == "1":
+                tox_menu()
+            elif ch == "2":
+                print("Выход")
+                sys.exit()
+
+if __name__ == "__main__":
+    print("Запуск Zennix Tox Bot... (для горячих клавиш нужна права админа на Windows)")
+    main()
