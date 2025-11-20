@@ -1,17 +1,25 @@
-# ZENNIX TOX BOT — ОФИЦИАЛЬНЫЙ МЕЙН СКРИПТ (v1.2.2)
+# ZENNIX TOX BOT — ОФИЦИАЛЬНЫЙ МЕЙН СКРИПТ v1.2.2
 import requests, os, sys, time, random, keyboard, threading, platform
 
-BOT_VERSION = "1.2.2"  # ← МЕНЯЙ ЗДЕСЬ ПРИ ОБНОВЛЕНИИ
+BOT_VERSION = "1.2.2"  # ← МЕНЯЙ ПРИ ОБНОВЛЕНИИ
 
 VERSION_URL = "https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/version"
 FOLDER = r"C:\zennix"
 VERSION_FILE = os.path.join(FOLDER, "version.txt")
 
-# === СООБЩЕНИЯ ===
+# ВСЕ 28 СООБЩЕНИЙ — ПОЛНЫЙ СПИСОК
 MESSAGES = [
-    ("у тебя ммть шлюхв", 0.8), ("я кнк месник", 0.8), ("ебанный ледниковый период", 0.8),
-    ("сид обосранный", 0.8), ("клыкастый я тебе с хуя зубы выбил", 0.8),
-    ("у тя мамка в копьем в жопе танцует", 0.8), ("верещтт свинка хоххлятская", 0.8),
+    ("у тебя ммть шлюхв", 0.8), ("я кнк месник", 0.8), ("ей руки отрезал", 0.8),
+    ("верещтт свинка хоххлятская", 0.8), ("у тебя бктя будист", 0.8), ("на флейте хуярит", 0.8),
+    ("я ему флейту в жопу вставил", 0.8), ("норм ты ебанная чибурашка", 0.8), ("клапоухий пидор", 0.8),
+    ("за уши тебя брал бомжа", 0.8), ("педик волосатый", 0.8), ("пинок под жопу дам те", 0.8),
+    ("в клетку улетишь", 0.8), ("на огороде", 0.8), ("жопой коноплю собираешь", 0.8),
+    ("дырявый", 0.8), ("петух", 0.8), ("норм ты с мультика збежал", 0.8),
+    ("кусок говна", 0.8), ("ебанный ледниковый период", 0.8), ("сид обосранный", 0.8),
+    ("клыкастый я тебе с хуя зубы выбил", 0.8), ("а бля забыл у тя цыганский род же", 0.8),
+    ("метка на лбу красная", 0.8), ("че за хуйня хуесос", 0.8),
+    ("я тупо с дартца ебанного те голову проломал", 0.8), ("ебанный индеец", 0.8),
+    ("у тя мамка в копьем в жопе танцует", 0.8),
 ]
 
 spam_running = False
@@ -21,14 +29,14 @@ current_user = "unknown"
 def clear(): os.system("cls" if os.name=="nt" else "clear")
 def type_effect(t,d=0.04): [print(c,end="",flush=True) or time.sleep(d) for c in t]; print()
 
-def progress_bar(name="Loading"):
-    print(f">>> {name}")
+def progress_bar():
+    print(">>> Загрузка модулей")
     for i in range(41):
-        print(f"\r[{'█'*i + '░'*(40-i)}] {i*2.5:.1f}%", end="", flush=True)
-        time.sleep(random.uniform(0.02,0.09))
+        print(f"\r[{'█'*i+'░'*(40-i)}] {i*2.5:.0f}%", end="", flush=True)
+        time.sleep(random.uniform(0.03,0.07))
     print("\n")
 
-# Проверка + создание папки и версии
+# Создаём папку + version.txt
 def init_folder():
     if not os.path.exists(FOLDER):
         os.makedirs(FOLDER)
@@ -37,51 +45,61 @@ def init_folder():
         with open(VERSION_FILE, "w", encoding="utf-8") as f:
             f.write(BOT_VERSION)
 
+# Проверка версии — теперь работает идеально
 def check_version():
     try:
-        online = requests.get(VERSION_URL, timeout=8).text.strip()
-        local = open(VERSION_FILE,"r",encoding="utf-8").read().strip() if os.path.exists(VERSION_FILE) else "0"
+        online = requests.get(VERSION_URL, timeout=10).text.strip()
+        local = "0.0.0"
+        if os.path.exists(VERSION_FILE):
+            with open(VERSION_FILE, "r", encoding="utf-8") as f:
+                local = f.read().strip()
+
         if online != BOT_VERSION or online != local:
             clear()
-            print("\033[91m" + "╔"+"═"*54+"╗")
-            print("║"+" "*16 + "ВЕРСИЯ УСТАРЕЛА"+" "*15+"║")
-            print("║"+f" Текущая: {BOT_VERSION} → Доступна: {online} ".center(54)+"║")
-            print("╚"+"═"*54+"╝"+"\033[0m\n")
+            print("\033[91m╔══════════════════════════════════════════════════════╗")
+            print("║                   ВЕРСИЯ УСТАРЕЛА                    ║")
+            print(f"║      Текущая: {BOT_VERSION} → Доступна: {online}          ║")
+            print("╚══════════════════════════════════════════════════════╝\033[0m\n")
             ans = input("   Обновить сейчас? (Y/N): ").strip().lower()
-            if ans in ["y","yes","да"]:
-                print("\n   Загрузка обновления...")
-                progress_bar("Downloading new version")
-                new_code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=20).text
+            if ans in ["y", "yes", "да"]:
+                print("\n   Загрузка новой версии...")
+                progress_bar()
+                new_code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
                 with open(__file__, "w", encoding="utf-8") as f:
                     f.write(new_code)
                 with open(VERSION_FILE, "w", encoding="utf-8") as f:
                     f.write(online)
                 print("   Обновление завершено. Перезапуск...")
                 time.sleep(2)
-                os.execv(sys.executable, ['python'] + sys.argv)
-    except: pass
+                os.execv(sys.executable, [sys.executable] + sys.argv)
+    except:
+        pass
 
 def login():
     global current_user
     clear()
     print("ZENNIX TOX BOT")
     print(f"Версия: {BOT_VERSION}")
-    print("-"*40)
+    print("-" * 45)
     print("АВТОРИЗАЦИЯ")
-    print("-"*40)
+    print("-" * 45)
     try:
-        creds = {l.split(":")[0].strip():l.split(":")[1].strip() 
-                for l in requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic").text.splitlines() if ":" in l}
+        creds = {}
+        for line in requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic", timeout=5).text.splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                creds[k.strip()] = v.strip()
     except:
-        creds = {"zennix":"1488"}
+        creds = {"zennix": "1488"}
+    
     for _ in range(3):
         u = input("\nЛогин: ").strip()
         p = input("Пароль: ").strip()
         if creds.get(u) == p:
             current_user = u
-            type_effect("Доступ разрешён", 0.06)
+            type_effect("ДОСТУП РАЗРЕШЁН", 0.06)
             return True
-        print("Неверно")
+        print("Неверные данные")
     print("Доступ запрещён")
     sys.exit()
 
@@ -91,21 +109,21 @@ def spam_worker():
     spam_running = True
     stop_event.clear()
     for i in range(5,0,-1):
-        print(f"\rЗапуск спама через {i}...", end="", flush=True)
+        print(f"\rЗапуск через {i}...", end="", flush=True)
         time.sleep(1)
     clear()
-    print("СПАМ АКТИВИРОВАН │ F8 — Остановить")
-    print("-"*50)
+    print("СПАМ АКТИВИРОВАН | F8 — Остановить")
+    print("-" * 50)
     while not stop_event.is_set():
-        for msg,delay in MESSAGES:
+        for msg, d in MESSAGES:
             if stop_event.is_set(): break
             keyboard.write(msg)
             keyboard.press_and_release("enter")
-            time.sleep(delay)
+            time.sleep(d)
     spam_running = False
-    print("СПАМ ОСТАНОВЛЕН")
+    print("\nСПАМ ОСТАНОВЛЕН")
 
-keyboard.add_hotkey('f7', lambda: threading.Thread(target=spam_worker,daemon=True).start())
+keyboard.add_hotkey('f7', lambda: threading.Thread(target=spam_worker, daemon=True).start())
 keyboard.add_hotkey('f8', stop_event.set)
 
 # === ЗАПУСК ===
@@ -114,16 +132,16 @@ if __name__ == "__main__":
     check_version()
     login()
     clear()
-    type_effect(">>> Zennix Tox Bot запущен", 0.05)
-    progress_bar("Core Modules")
-    progress_bar("Keyboard Hook")
+    type_effect(">>> Zennix Tox Bot активирован", 0.05)
+    progress_bar()
     type_effect("Готов к работе", 0.05)
     print("="*60)
     type_effect(f"Пользователь: {current_user}", 0.04)
     type_effect(f"Версия: {BOT_VERSION}", 0.04)
-    type_effect("F7 — старт спама │ F8 — стоп", 0.04)
-    print("="*60 + "\n")
-    print("Сверните окно и идите в чат")
+    type_effect("F7 — старт спама | F8 — стоп", 0.04)
+    print("="*60)
+    print("\nСверните окно и идите в чат")
     try:
         while True: time.sleep(1)
-    except: print("\nВыход"); sys.exit()
+    except:
+        sys.exit()
