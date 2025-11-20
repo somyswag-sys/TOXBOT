@@ -1,37 +1,35 @@
-# Zennix tox bot — v1.12.4 — 100% БЕЗ ОШИБОК (исправлено)
+# Zennix tox bot — v1.12.5 — САМЫЙ КРАСИВЫЙ РЕЙДЕР 2025
 import requests, os, sys, time, random, keyboard, threading
 
-BOT_VERSION = "1.12.4"
+BOT_VERSION = "1.12.5"
 VERSION_URL = "https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/version"
 FOLDER = r"C:\zennix"
 CONFIG = os.path.join(FOLDER, "config.txt")
 
 # === СРАВНЕНИЕ ВЕРСИЙ ===
-def is_newer(online, current):
+def is_newer(o, c):
     try:
-        def norm(v): return list(map(int, (v + ".0.0").split(".")[:3]))
-        return norm(online) > norm(current)
-    except:
-        return False
+        def n(v): return list(map(int, (v + ".0.0").split(".")[:3]))
+        return n(o) > n(c)
+    except: return False
 
 # === КОНФИГ ===
-def load_config():
+def load_cfg():
     if not os.path.exists(CONFIG): return None
     try:
-        lines = [l.strip() for l in open(CONFIG, encoding="utf-8")]
-        if len(lines) >= 3:
-            return {"user": lines[0], "pass": lines[1], "delay": float(lines[2])}
-        elif len(lines) == 1:
-            return {"delay": float(lines[0])}
+        l = [x.strip() for x in open(CONFIG, encoding="utf-8")]
+        if len(l) >= 3:
+            return {"user": l[0], "pass": l[1], "delay": float(l[2])}
+        elif len(l) == 1:
+            return {"delay": float(l[0])}
     except: pass
     return None
 
-cfg = load_config()
+cfg = load_cfg()
 DELAY = cfg["delay"] if cfg and "delay" in cfg else 0.8
 saved_user = cfg["user"] if cfg and "user" in cfg else None
 saved_pass = cfg["pass"] if cfg and "pass" in cfg else None
 
-# === СООБЩЕНИЯ (глобальные) ===
 MESSAGES = [(m, DELAY) for m in [
     "у тебя ммть шлюхв","я кнк месник","ей руки отрезал","верещтт свинка хоххлятская",
     "ебанный ледниковый период","сид обосранный","клыкастый я тебе с хуя зубы выбил",
@@ -44,22 +42,28 @@ stop_event = threading.Event()
 spam_active = False
 
 def clear(): os.system("cls" if os.name=="nt" else "clear")
-def type(t, d=0.05):
-    for c in t: print(c,end="",flush=True); time.sleep(d)
+def t(text, d=0.04):
+    for c in text: print(c, end="", flush=True); time.sleep(d)
     print()
 
-def loading():
+def banner():
     clear()
-    type("Loading")
-    for _ in range(3):
-        print(".",end="",flush=True); time.sleep(0.5)
-    print("\n")
+    print("\033[95m" + r"""
+ ███████╗███████╗███╗   ██╗███╗   ██╗██╗██╗  ██╗
+ ╚══███╔╝██╔════╝████╗  ██║████╗  ██║██║╚██╗██╔╝
+   ███╔╝ █████╗  ██╔██╗ ██║██╔██╗ ██║██║ ╚███╔╝ 
+  ███╔╝  ██╔══╝  ██║╚██╗██║██║╚██╗██║██║ ██╔██╗ 
+ ███████╗███████╗██║ ╚████║██║ ╚████║██║██╔╝ ██╗
+ ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝ v1.12.5
+    \033[0m\033[91m              ╔═ TOXIC RAID SYSTEM ═╗\033[0m
+    """)
 
-def progress(name):
-    print(f"   {name}")
-    for i in range(51):
-        print(f"\r   [{'█'*i+'░'*(50-i)}] {i*2}%", end="", flush=True)
-        time.sleep(random.uniform(0.03,0.08))
+def progress(stage):
+    print(f"   \033[90m└─> {stage}\033[0m")
+    for i in range(1, 41):
+        bar = "█" * i + "░" * (40 - i)
+        print(f"\r   \033[93m[{bar}] {i*2.5:.1f}%\033[0m", end="", flush=True)
+        time.sleep(random.uniform(0.03, 0.09))
     print("\n")
 
 def check_update():
@@ -67,17 +71,16 @@ def check_update():
         online = requests.get(VERSION_URL, timeout=10).text.strip()
         if is_newer(online, BOT_VERSION):
             clear()
-            print("\033[91m╔════════════════════════════════════╗")
-            print("║        Версия устарела             ║")
-            print(f"║  Текущая: {BOT_VERSION} → Доступна: {online}   ║")
-            print("╚════════════════════════════════════╝\033[0m\n")
-            if input("   Обновить сейчас? (y/n): ").lower() in ["y", "да"]:
-                loading()
+            print("\033[91m╔══════════════════════════════════════╗")
+            print("║          ВЕРСИЯ УСТАРЕЛА             ║")
+            print(f"║   Текущая: {BOT_VERSION} → Доступна: {online}       ║")
+            print("╚══════════════════════════════════════╝\033[0m\n")
+            if input("   Обновить сейчас? (y/n): ").lower() in ["y","да"]:
                 progress("Downloading update")
-                progress("Applying patch")
+                progress("Verifying integrity")
                 code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
                 with open(__file__, "w", encoding="utf-8") as f: f.write(code)
-                print("\033[92mГотово! Перезапуск...\033[0m")
+                print("\033[92m   Обновление завершено. Перезапуск...\033[0m")
                 time.sleep(2)
                 os.execv(sys.executable, [sys.executable] + sys.argv)
     except: pass
@@ -87,62 +90,65 @@ def login():
     if saved_user and saved_pass:
         current_user = saved_user
         clear()
-        type(f"Автологин: {current_user}")
+        t(f"   Автологин: \033[92m{current_user}\033[0m")
         time.sleep(1.5)
         return
 
     clear()
-    print("Zennix tox bot | Авторизация")
+    print("\033[95m   Zennix tox bot | Авторизация\033[0m")
     try:
         creds = {l.split(":")[0].strip():l.split(":")[1].strip()
                 for l in requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic",timeout=5).text.splitlines() if ":" in l}
     except: creds = {"zennix":"1488"}
 
     for _ in range(3):
-        u = input("\nЛогин: ").strip()
-        p = input("Пароль: ").strip()
+        u = input("\n   Логин: ").strip()
+        p = input("   Пароль: ").strip()
         if creds.get(u) == p:
             current_user = u
-            remember = input("Запомнить сессию? (y/n): ").lower() in ["y","да"]
+            rem = input("   Запомнить сессию? (y/n): ").lower() in ["y","да"]
             with open(CONFIG, "w", encoding="utf-8") as f:
-                f.write(f"{u}\n{p}\n{DELAY}" if remember else str(DELAY))
-            type("Доступ разрешён")
+                f.write(f"{u}\n{p}\n{DELAY}" if rem else str(DELAY))
+            t("   Доступ разрешён")
             return
-        print("Неверно")
-    print("Доступ запрещён"); sys.exit()
+        print("   Неверно")
+    print("   Доступ запрещён"); sys.exit()
 
 def change_delay():
     global DELAY, MESSAGES
     try:
-        new = float(input(f"Текущая: {DELAY}s → Новая (0.1-5.0): ").replace(",","."))
+        new = float(input(f"   Текущая задержка: {DELAY}s → Новая (0.1-5.0): ").replace(",","."))
         if 0.1 <= new <= 5.0:
             DELAY = new
-            MESSAGES = [(m, new) for m, _ in MESSAGES]
-            # Перезаписываем только последнюю строку (задержку)
-            with open(CONFIG, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-            if lines: lines[-1] = str(new) + "\n"
+            MESSAGES = [(m,new) for m,_ in MESSAGES]
+            with open(CONFIG, "r", encoding="utf-8") as f: lines = f.readlines()
+            lines[-1] = str(new) + "\n"
             with open(CONFIG, "w", encoding="utf-8") as f: f.writelines(lines)
-            type(f"Задержка: {new}s")
-        else:
-            type("Диапазон 0.1–5.0!")
-    except:
-        type("Ошибка ввода")
+            t(f"   Задержка изменена: \033[92m{new}s\033[0m")
+        else: t("   Диапазон 0.1–5.0!")
+    except: t("   Ошибка ввода")
     time.sleep(2)
 
 def menu():
     while True:
         clear()
-        print(f"Zennix tox bot v{BOT_VERSION} | {current_user} | Задержка: {DELAY}s")
-        print("═"*50)
-        print("1. Спам (f7)")
-        print("2. Сменить задержку")
-        print("3. Выход")
-        print("═"*50)
-        ch = input("\n→ ")
-        if ch == "1": input("Нажми f7 в чате → enter...")
+        banner()
+        print(f"   \033[90mПользователь:\033[0m \033[96m{current_user}\033[0m    \033[90mЗадержка:\033[0m \033[93m{DELAY}s\033[0m\n")
+        print("   \033[95m╔══════════════════════════════════╗\033[0m")
+        print("   \033[95m║  1. Начать рейд (f7)             ║\033[0m")
+        print("   \033[95m║  2. Сменить задержку             ║\033[0m")
+        print("   \033[95m║  3. Выйти с аккаунта             ║\033[0m")
+        print("   \033[95m║  4. Полный выход                 ║\033[0m")
+        print("   \033[95m╚══════════════════════════════════╝\033[0m")
+        ch = input("\n   \033[90mВыбор → \033[0m")
+        if ch == "1": input("\n   Перейди в чат → нажми f7 → enter...")
         elif ch == "2": change_delay()
-        elif ch == "3": sys.exit()
+        elif ch == "3":
+            if os.path.exists(CONFIG): os.remove(CONFIG)
+            t("   Сессия удалена. Перезапуск...")
+            time.sleep(2)
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+        elif ch == "4": t("   До связи, токсик."); sys.exit()
 
 def spam():
     global spam_active
@@ -150,17 +156,18 @@ def spam():
     spam_active = True
     stop_event.clear()
     for i in range(5,0,-1):
-        print(f"Запуск через {i}...", end="\r"); time.sleep(1)
+        print(f"\r   Запуск рейда через {i}...", end="", flush=True); time.sleep(1)
     clear()
-    print(f"СПАМ АКТИВЕН | f8 — стоп")
+    print("\033[91m   РЕЙД АКТИВИРОВАН | f8 — стоп\033[0m")
+    print("   " + "─"*50)
     while not stop_event.is_set():
-        for t,_ in MESSAGES:
+        for txt,_ in MESSAGES:
             if stop_event.is_set(): break
-            keyboard.write(t)
+            keyboard.write(txt)
             keyboard.press_and_release("enter")
             time.sleep(DELAY)
     spam_active = False
-    print("\nСпам остановлен")
+    print("\n   Рейд завершён")
 
 keyboard.add_hotkey("f7", lambda: threading.Thread(target=spam,daemon=True).start())
 keyboard.add_hotkey("f8", stop_event.set)
@@ -170,9 +177,14 @@ if not os.path.exists(FOLDER):
     os.makedirs(FOLDER)
     os.system(f'attrib +h "{FOLDER}"')
 
+clear()
+banner()
+progress("Hook installation")
+progress("Bypassing protections")
+progress("Loading toxic database")
+progress("Initializing raid engine")
+progress("Ready to raid")
+
 check_update()
 login()
-loading()
-progress("Initializing")
-progress("Ready")
 menu()
