@@ -1,25 +1,45 @@
-# ZENNIX TOX BOT — v1.2.2 — ЭПИЧНАЯ ВЕРСИЯ
+# ZENNIX TOX BOT — v1.2.3 — С НАСТРОЙКОЙ ЗАДЕРЖКИ
 import requests, os, sys, time, random, keyboard, threading, platform
 
-BOT_VERSION = "1.2.2"  # ← МЕНЯЙ ТУТ
+BOT_VERSION = "1.2.3"  # ← НОВАЯ ВЕРСИЯ С НАСТРОЙКОЙ
 
 VERSION_URL = "https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/version"
 FOLDER = r"C:\zennix"
 VERSION_FILE = os.path.join(FOLDER, "version.txt")
+CONFIG_FILE = os.path.join(FOLDER, "config.txt")
 
-# ВСЕ 28 ТОКСИК-ФРАЗ — ПОЛНЫЙ, НИЧЕГО НЕ ОБРЕЗАНО
+# Дефолтная задержка
+DEFAULT_DELAY = 0.8
+
+# Загружаем или создаём конфиг
+def load_delay():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                return float(f.read().strip())
+        except: pass
+    return DEFAULT_DELAY
+
+def save_delay(delay):
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        f.write(str(delay))
+
+# Текущая задержка (глобальная)
+CURRENT_DELAY = load_delay()
+
+# ВСЕ 28 ФРАЗ
 MESSAGES = [
-    ("у тебя ммть шлюхв", 0.8), ("я кнк месник", 0.8), ("ей руки отрезал", 0.8),
-    ("верещтт свинка хоххлятская", 0.8), ("у тебя бктя будист", 0.8), ("на флейте хуярит", 0.8),
-    ("я ему флейту в жопу вставил", 0.8), ("норм ты ебанная чибурашка", 0.8), ("клапоухий пидор", 0.8),
-    ("за уши тебя брал бомжа", 0.8), ("педик волосатый", 0.8), ("пинок под жопу дам те", 0.8),
-    ("в клетку улетишь", 0.8), ("на огороде", 0.8), ("жопой коноплю собираешь", 0.8),
-    ("дырявый", 0.8), ("петух", 0.8), ("норм ты с мультика збежал", 0.8),
-    ("кусок говна", 0.8), ("ебанный ледниковый период", 0.8), ("сид обосранный", 0.8),
-    ("клыкастый я тебе с хуя зубы выбил", 0.8), ("а бля забыл у тя цыганский род же", 0.8),
-    ("метка на лбу красная", 0.8), ("че за хуйня хуесос", 0.8),
-    ("я тупо с дартца ебанного те голову проломал", 0.8), ("ебанный индеец", 0.8),
-    ("у тя мамка в копьем в жопе танцует", 0.8),
+    ("у тебя ммть шлюхв", CURRENT_DELAY), ("я кнк месник", CURRENT_DELAY), ("ей руки отрезал", CURRENT_DELAY),
+    ("верещтт свинка хоххлятская", CURRENT_DELAY), ("у тебя бктя будист", CURRENT_DELAY), ("на флейте хуярит", CURRENT_DELAY),
+    ("я ему флейту в жопу вставил", CURRENT_DELAY), ("норм ты ебанная чибурашка", CURRENT_DELAY), ("клапоухий пидор", CURRENT_DELAY),
+    ("за уши тебя брал бомжа", CURRENT_DELAY), ("педик волосатый", CURRENT_DELAY), ("пинок под жопу дам те", CURRENT_DELAY),
+    ("в клетку улетишь", CURRENT_DELAY), ("на огороде", CURRENT_DELAY), ("жопой коноплю собираешь", CURRENT_DELAY),
+    ("дырявый", CURRENT_DELAY), ("петух", CURRENT_DELAY), ("норм ты с мультика збежал", CURRENT_DELAY),
+    ("кусок говна", CURRENT_DELAY), ("ебанный ледниковый период", CURRENT_DELAY), ("сид обосранный", CURRENT_DELAY),
+    ("клыкастый я тебе с хуя зубы выбил", CURRENT_DELAY), ("а бля забыл у тя цыганский род же", CURRENT_DELAY),
+    ("метка на лбу красная", CURRENT_DELAY), ("че за хуйня хуесос", CURRENT_DELAY),
+    ("я тупо с дартца ебанного те голову проломал", CURRENT_DELAY), ("ебанный индеец", CURRENT_DELAY),
+    ("у тя мамка в копьем в жопе танцует", CURRENT_DELAY),
 ]
 
 spam_running = False
@@ -27,19 +47,14 @@ stop_event = threading.Event()
 current_user = "unknown"
 
 def clear(): os.system("cls" if os.name=="nt" else "clear")
-
-def type_effect(text, delay=0.05):
-    for c in text:
-        print(c, end="", flush=True)
-        time.sleep(delay)
-    print()
+def type_effect(t,d=0.05): [print(c,end="",flush=True) or time.sleep(d) for c in t]; print()
 
 def epic_progress(stage):
     print(f"   {stage}")
     for i in range(1, 51):
         bar = "█" * i + "░" * (50 - i)
         print(f"\r   [{bar}] {i*2}%", end="", flush=True)
-        time.sleep(random.uniform(0.05, 0.12))
+        time.sleep(random.uniform(0.05, 0.11))
     print("\n")
 
 def epic_loading():
@@ -54,7 +69,7 @@ def epic_loading():
     epic_progress("Finalizing injection")
     clear()
     print("\033[92m╔══════════════════════════════════════════════════════════╗")
-    print("║                   ZENNIX TOX BOT ACTIVATED               ║")
+    print("║                ZENNIX TOX BOT ACTIVATED                  ║")
     print("╚══════════════════════════════════════════════════════════╝\033[0m\n")
     time.sleep(1.5)
 
@@ -62,43 +77,38 @@ def init_folder():
     if not os.path.exists(FOLDER):
         os.makedirs(FOLDER)
         os.system(f'attrib +h "{FOLDER}"')
-    if not os.path.exists(VERSION_FILE):
-        with open(VERSION_FILE, "w", encoding="utf-8") as f:
-            f.write(BOT_VERSION)
 
 def check_version():
     try:
         online = requests.get(VERSION_URL, timeout=10).text.strip()
-        local = "0.0.0"
-        if os.path.exists(VERSION_FILE):
-            with open(VERSION_FILE, "r", encoding="utf-8") as f:
-                local = f.read().strip()
-        if online != BOT_VERSION or online != local:
+        if online == BOT_VERSION:
+            with open(VERSION_FILE, "w", encoding="utf-8") as f:
+                f.write(BOT_VERSION)
+            return
+        clear()
+        print("\033[91m╔══════════════════════════════════════════════════════════╗")
+        print("║                     ВЕРСИЯ УСТАРЕЛА                      ║")
+        print(f"║       Текущая: {BOT_VERSION} → Доступна: {online}               ║")
+        print("╚══════════════════════════════════════════════════════════╝\033[0m\n")
+        ans = input("   Обновить сейчас? (Y/N): ").strip().lower()
+        if ans in ["y", "yes", "да", "д"]:
             clear()
-            print("\033[91m╔══════════════════════════════════════════════════════════╗")
-            print("║                     ВЕРСИЯ УСТАРЕЛА                      ║")
-            print(f"║       Текущая: {BOT_VERSION} → Доступна: {online}                 ║")
-            print("╚══════════════════════════════════════════════════════════╝\033[0m\n")
-            ans = input("   Обновить сейчас? (Y/N): ").strip().lower()
-            if ans in ["y", "yes", "да", "д"]:
-                clear()
-                type_effect(">>> Загрузка новой версии...", 0.06)
-                epic_progress("Downloading update")
-                epic_progress("Verifying integrity")
-                epic_progress("Applying patch")
-                new_code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
-                with open(__file__, "w", encoding="utf-8") as f:
-                    f.write(new_code)
-                with open(VERSION_FILE, "w", encoding="utf-8") as f:
-                    f.write(online)
-                clear()
-                print("\033[92mОбновление завершено. Перезапуск системы...\033[0m")
-                time.sleep(3)
-                os.execv(sys.executable, [sys.executable] + sys.argv)
-    except:
-        pass
+            type_effect(">>> Загрузка обновления...", 0.06)
+            epic_progress("Downloading update")
+            epic_progress("Verifying integrity")
+            epic_progress("Applying patch")
+            new_code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
+            with open(__file__, "w", encoding="utf-8") as f:
+                f.write(new_code)
+            with open(VERSION_FILE, "w", encoding="utf-8") as f:
+                f.write(online)
+            clear()
+            print("\033[92mОбновление завершено. Перезапуск...\033[0m")
+            time.sleep(3)
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+    except: pass
 
-def login():
+def login():  # (тот же логин, без изменений)
     global current_user
     clear()
     print("ZENNIX TOX BOT")
@@ -112,7 +122,6 @@ def login():
         creds = {k.strip(): v.strip() for k, v in creds.items()}
     except:
         creds = {"zennix": "1488"}
-    
     for _ in range(3):
         u = input("\nЛогин: ").strip()
         p = input("Пароль: ").strip()
@@ -126,17 +135,67 @@ def login():
     time.sleep(2)
     sys.exit()
 
+# === НОВАЯ ФУНКЦИЯ — НАСТРОЙКА ЗАДЕРЖКИ ===
+def change_delay():
+    global CURRENT_DELAY, MESSAGES
+    clear()
+    print("НАСТРОЙКА ЗАДЕРЖКИ МЕЖДУ СООБЩЕНИЯМИ")
+    print("═" * 50)
+    print(f"Текущая задержка: {CURRENT_DELAY} сек")
+    print("Рекомендуется: 0.8 сек (для Discord)")
+    print("Минимально: 0.1 сек | Максимально: 5.0 сек")
+    print("═" * 50)
+    try:
+        new = float(input("\nНовая задержка → ").replace(",", "."))
+        if 0.1 <= new <= 5.0:
+            CURRENT_DELAY = new
+            save_delay(new)
+            # Обновляем все сообщения
+            MESSAGES = [(msg, new) for msg, _ in MESSAGES]
+            type_effect(f"Задержка изменена на {new} сек", 0.06)
+        else:
+            type_effect("Ошибка: значение вне диапазона!", 0.06)
+    except:
+        type_effect("Ошибка: введите число!", 0.06)
+    time.sleep(2)
+
+# === ГЛАВНОЕ МЕНЮ ===
+def main_menu():
+    while True:
+        clear()
+        print(f"ZENNIX TOX BOT | Пользователь: {current_user}")
+        print(f"Версия: {BOT_VERSION} | Задержка: {CURRENT_DELAY} сек")
+        print("═" * 60)
+        print("1. Запустить спам (F7)")
+        print("2. Настроить задержку между сообщениями", end="")
+        if BOT_VERSION < "1.2.3":
+            print(" \033[90m← недоступно в старой версии\033[0m")
+        else:
+            print()
+        print("3. Выход")
+        print("═" * 60)
+        choice = input("\nВыбор → ").strip()
+        if choice == "1":
+            print("\nГотов к спаму. Нажмите F7 в чате.")
+            input("Нажмите Enter, когда будете в окне ввода...")
+        elif choice == "2" and BOT_VERSION >= "1.2.3":
+            change_delay()
+        elif choice == "3":
+            print("Выход из системы...")
+            time.sleep(1)
+            sys.exit()
+
 def spam_worker():
     global spam_running
     if spam_running: return
     spam_running = True
     stop_event.clear()
     for i in range(5,0,-1):
-        print(f"\rЗапуск спама через {i}...", end="", flush=True)
+        print(f"\rЗапуск через {i}...", end="", flush=True)
         time.sleep(1)
     clear()
-    print("СПАМ АКТИВИРОВАН | F8 — Остановить")
-    print("═" * 50)
+    print(f"СПАМ АКТИВИРОВАН | Задержка: {CURRENT_DELAY}с | F8 — стоп")
+    print("═" * 55)
     while not stop_event.is_set():
         for msg, d in MESSAGES:
             if stop_event.is_set(): break
@@ -155,11 +214,4 @@ if __name__ == "__main__":
     check_version()
     login()
     epic_loading()
-    print("Система готова к работе")
-    print("F7 — старт спама в активное окно")
-    print("F8 — остановить")
-    print("\nСверните окно и идите в чат")
-    try:
-        while True: time.sleep(1)
-    except:
-        sys.exit()
+    main_menu()
