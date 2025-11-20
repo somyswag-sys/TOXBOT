@@ -1,33 +1,28 @@
-# ZENNIX TOX BOT — v1.2.3 — С НАСТРОЙКОЙ ЗАДЕРЖКИ
+# ZENNIX TOX BOT — v1.2.3 — РАБОЧАЯ ВЕРСИЯ БЕЗ ОШИБОК
 import requests, os, sys, time, random, keyboard, threading, platform
 
-BOT_VERSION = "1.2.3"  # ← НОВАЯ ВЕРСИЯ С НАСТРОЙКОЙ
+BOT_VERSION = "1.2.3"
 
 VERSION_URL = "https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/version"
 FOLDER = r"C:\zennix"
 VERSION_FILE = os.path.join(FOLDER, "version.txt")
-CONFIG_FILE = os.path.join(FOLDER, "config.txt")
+CONFIG_FILE = os.path.join(FOLDER, "config.txt")  # ← ЭТО БЫЛО ПОТЕРЯНО
 
-# Дефолтная задержка
-DEFAULT_DELAY = 0.8
-
-# Загружаем или создаём конфиг
+# Загрузка/сохранение задержки
 def load_delay():
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 return float(f.read().strip())
         except: pass
-    return DEFAULT_DELAY
+    return 0.8
 
-def save_delay(delay):
+def save_delay(d):
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        f.write(str(delay))
+        f.write(str(d))
 
-# Текущая задержка (глобальная)
 CURRENT_DELAY = load_delay()
 
-# ВСЕ 28 ФРАЗ
 MESSAGES = [
     ("у тебя ммть шлюхв", CURRENT_DELAY), ("я кнк месник", CURRENT_DELAY), ("ей руки отрезал", CURRENT_DELAY),
     ("верещтт свинка хоххлятская", CURRENT_DELAY), ("у тебя бктя будист", CURRENT_DELAY), ("на флейте хуярит", CURRENT_DELAY),
@@ -49,29 +44,12 @@ current_user = "unknown"
 def clear(): os.system("cls" if os.name=="nt" else "clear")
 def type_effect(t,d=0.05): [print(c,end="",flush=True) or time.sleep(d) for c in t]; print()
 
-def epic_progress(stage):
-    print(f"   {stage}")
-    for i in range(1, 51):
-        bar = "█" * i + "░" * (50 - i)
-        print(f"\r   [{bar}] {i*2}%", end="", flush=True)
-        time.sleep(random.uniform(0.05, 0.11))
+def epic_progress(s):
+    print(f"   {s}")
+    for i in range(51):
+        print(f"\r   [{'█'*i+'░'*(50-i)}] {i*2}%", end="", flush=True)
+        time.sleep(random.uniform(0.05,0.11))
     print("\n")
-
-def epic_loading():
-    clear()
-    type_effect(">>> ZENNIX TOX SYSTEM", 0.08)
-    time.sleep(0.7)
-    epic_progress("Decrypting payload")
-    epic_progress("Injecting keyboard driver")
-    epic_progress("Bypassing Windows Defender")
-    epic_progress("Loading toxic database")
-    epic_progress("Activating spam engine")
-    epic_progress("Finalizing injection")
-    clear()
-    print("\033[92m╔══════════════════════════════════════════════════════════╗")
-    print("║                ZENNIX TOX BOT ACTIVATED                  ║")
-    print("╚══════════════════════════════════════════════════════════╝\033[0m\n")
-    time.sleep(1.5)
 
 def init_folder():
     if not os.path.exists(FOLDER):
@@ -81,109 +59,73 @@ def init_folder():
 def check_version():
     try:
         online = requests.get(VERSION_URL, timeout=10).text.strip()
-        if online == BOT_VERSION:
-            with open(VERSION_FILE, "w", encoding="utf-8") as f:
-                f.write(BOT_VERSION)
-            return
-        clear()
-        print("\033[91m╔══════════════════════════════════════════════════════════╗")
-        print("║                     ВЕРСИЯ УСТАРЕЛА                      ║")
-        print(f"║       Текущая: {BOT_VERSION} → Доступна: {online}               ║")
-        print("╚══════════════════════════════════════════════════════════╝\033[0m\n")
-        ans = input("   Обновить сейчас? (Y/N): ").strip().lower()
-        if ans in ["y", "yes", "да", "д"]:
+        if online != BOT_VERSION:
             clear()
-            type_effect(">>> Загрузка обновления...", 0.06)
-            epic_progress("Downloading update")
-            epic_progress("Verifying integrity")
-            epic_progress("Applying patch")
-            new_code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
-            with open(__file__, "w", encoding="utf-8") as f:
-                f.write(new_code)
-            with open(VERSION_FILE, "w", encoding="utf-8") as f:
-                f.write(online)
-            clear()
-            print("\033[92mОбновление завершено. Перезапуск...\033[0m")
-            time.sleep(3)
-            os.execv(sys.executable, [sys.executable] + sys.argv)
+            print("\033[91m╔══════════════════════════════════════════════════════════╗")
+            print("║                     ВЕРСИЯ УСТАРЕЛА                      ║")
+            print(f"║       Текущая: {BOT_VERSION} → Доступна: {online}               ║")
+            print("╚══════════════════════════════════════════════════════════╝\033[0m\n")
+            if input("   Обновить сейчас? (Y/N): ").strip().lower() in ["y","yes","да","д"]:
+                clear()
+                type_effect(">>> Загрузка обновления...",0.06)
+                epic_progress("Downloading update")
+                epic_progress("Verifying integrity")
+                epic_progress("Applying patch")
+                new = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
+                with open(__file__,"w",encoding="utf-8") as f: f.write(new)
+                with open(VERSION_FILE,"w",encoding="utf-8") as f: f.write(online)
+                print("\033[92mОбновление завершено. Перезапуск...\033[0m")
+                time.sleep(3)
+                os.execv(sys.executable, [sys.executable] + sys.argv)
     except: pass
 
-def login():  # (тот же логин, без изменений)
+def login():
     global current_user
     clear()
-    print("ZENNIX TOX BOT")
-    print(f"Версия: {BOT_VERSION}")
-    print("═" * 50)
-    print("АВТОРИЗАЦИЯ")
-    print("═" * 50)
+    print("ZENNIX TOX BOT | АВТОРИЗАЦИЯ")
     try:
-        data = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic", timeout=5).text
-        creds = dict(line.split(":",1) for line in data.splitlines() if ":" in line)
-        creds = {k.strip(): v.strip() for k, v in creds.items()}
-    except:
-        creds = {"zennix": "1488"}
+        creds = dict(l.split(":",1) for l in requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic", timeout=5).text.splitlines() if ":" in l)
+        creds = {k.strip():v.strip() for k,v in creds.items()}
+    except: creds = {"zennix":"1488"}
     for _ in range(3):
         u = input("\nЛогин: ").strip()
         p = input("Пароль: ").strip()
         if creds.get(u) == p:
             current_user = u
-            type_effect("ДОСТУП РАЗРЕШЁН", 0.07)
-            time.sleep(1.2)
+            type_effect("ДОСТУП РАЗРЕШЁН",0.07)
             return
         print("Неверно")
-    print("ДОСТУП ЗАПРЕЩЁН")
-    time.sleep(2)
-    sys.exit()
+    print("ДОСТУП ЗАПРЕЩЁН"); sys.exit()
 
-# === НОВАЯ ФУНКЦИЯ — НАСТРОЙКА ЗАДЕРЖКИ ===
 def change_delay():
     global CURRENT_DELAY, MESSAGES
     clear()
-    print("НАСТРОЙКА ЗАДЕРЖКИ МЕЖДУ СООБЩЕНИЯМИ")
-    print("═" * 50)
-    print(f"Текущая задержка: {CURRENT_DELAY} сек")
-    print("Рекомендуется: 0.8 сек (для Discord)")
-    print("Минимально: 0.1 сек | Максимально: 5.0 сек")
-    print("═" * 50)
+    print("НАСТРОЙКА ЗАДЕРЖКИ")
+    print(f"Текущая: {CURRENT_DELAY} сек (рекомендуется 0.8 для Discord)")
     try:
-        new = float(input("\nНовая задержка → ").replace(",", "."))
+        new = float(input("\nНовая задержка → ").replace(",","."))
         if 0.1 <= new <= 5.0:
             CURRENT_DELAY = new
             save_delay(new)
-            # Обновляем все сообщения
-            MESSAGES = [(msg, new) for msg, _ in MESSAGES]
-            type_effect(f"Задержка изменена на {new} сек", 0.06)
-        else:
-            type_effect("Ошибка: значение вне диапазона!", 0.06)
-    except:
-        type_effect("Ошибка: введите число!", 0.06)
+            MESSAGES = [(m, new) for m, _ in MESSAGES]
+            type_effect(f"Задержка установлена: {new} сек",0.06)
+        else: type_effect("Диапазон 0.1–5.0 сек!",0.06)
+    except: type_effect("Введи число!",0.06)
     time.sleep(2)
 
-# === ГЛАВНОЕ МЕНЮ ===
 def main_menu():
     while True:
         clear()
-        print(f"ZENNIX TOX BOT | Пользователь: {current_user}")
-        print(f"Версия: {BOT_VERSION} | Задержка: {CURRENT_DELAY} сек")
-        print("═" * 60)
+        print(f"ZENNIX TOX BOT v{BOT_VERSION} | {current_user} | Задержка: {CURRENT_DELAY}с")
+        print("═"*60)
         print("1. Запустить спам (F7)")
-        print("2. Настроить задержку между сообщениями", end="")
-        if BOT_VERSION < "1.2.3":
-            print(" \033[90m← недоступно в старой версии\033[0m")
-        else:
-            print()
+        print("2. Настроить задержку")
         print("3. Выход")
-        print("═" * 60)
-        choice = input("\nВыбор → ").strip()
-        if choice == "1":
-            print("\nГотов к спаму. Нажмите F7 в чате.")
-            input("Нажмите Enter, когда будете в окне ввода...")
-        elif choice == "2" and BOT_VERSION >= "1.2.3":
-            change_delay()
-        elif choice == "3":
-            print("Выход из системы...")
-            time.sleep(1)
-            sys.exit()
+        print("═"*60)
+        ch = input("\nВыбор → ")
+        if ch == "1": input("\nПерейдите в чат и нажмите F7 → Enter")
+        elif ch == "2": change_delay()
+        elif ch == "3": sys.exit()
 
 def spam_worker():
     global spam_running
@@ -191,27 +133,29 @@ def spam_worker():
     spam_running = True
     stop_event.clear()
     for i in range(5,0,-1):
-        print(f"\rЗапуск через {i}...", end="", flush=True)
-        time.sleep(1)
+        print(f"\rЗапуск через {i}...",end="",flush=True); time.sleep(1)
     clear()
     print(f"СПАМ АКТИВИРОВАН | Задержка: {CURRENT_DELAY}с | F8 — стоп")
-    print("═" * 55)
+    print("═"*55)
     while not stop_event.is_set():
-        for msg, d in MESSAGES:
+        for m,d in MESSAGES:
             if stop_event.is_set(): break
-            keyboard.write(msg)
+            keyboard.write(m)
             keyboard.press_and_release("enter")
             time.sleep(d)
     spam_running = False
     print("\nСПАМ ОСТАНОВЛЕН")
 
-keyboard.add_hotkey('f7', lambda: threading.Thread(target=spam_worker, daemon=True).start())
+keyboard.add_hotkey('f7', lambda: threading.Thread(target=spam_worker,daemon=True).start())
 keyboard.add_hotkey('f8', stop_event.set)
 
-# === ЗАПУСК ===
 if __name__ == "__main__":
     init_folder()
     check_version()
     login()
-    epic_loading()
+    clear()
+    type_effect(">>> ZENNIX TOX SYSTEM",0.08)
+    epic_progress("Loading modules")
+    epic_progress("Injecting hooks")
+    epic_progress("Ready")
     main_menu()
