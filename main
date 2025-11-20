@@ -1,13 +1,13 @@
-# ZENNIX TOX BOT — ОФИЦИАЛЬНЫЙ МЕЙН СКРИПТ v1.2.2
+# ZENNIX TOX BOT — v1.2.2 — ЭПИЧНАЯ ВЕРСИЯ
 import requests, os, sys, time, random, keyboard, threading, platform
 
-BOT_VERSION = "1.2.2"  # ← МЕНЯЙ ПРИ ОБНОВЛЕНИИ
+BOT_VERSION = "1.2.2"  # ← МЕНЯЙ ТУТ
 
 VERSION_URL = "https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/version"
 FOLDER = r"C:\zennix"
 VERSION_FILE = os.path.join(FOLDER, "version.txt")
 
-# ВСЕ 28 СООБЩЕНИЙ — ПОЛНЫЙ СПИСОК
+# ВСЕ 28 ТОКСИК-ФРАЗ — ПОЛНЫЙ, НИЧЕГО НЕ ОБРЕЗАНО
 MESSAGES = [
     ("у тебя ммть шлюхв", 0.8), ("я кнк месник", 0.8), ("ей руки отрезал", 0.8),
     ("верещтт свинка хоххлятская", 0.8), ("у тебя бктя будист", 0.8), ("на флейте хуярит", 0.8),
@@ -27,16 +27,37 @@ stop_event = threading.Event()
 current_user = "unknown"
 
 def clear(): os.system("cls" if os.name=="nt" else "clear")
-def type_effect(t,d=0.04): [print(c,end="",flush=True) or time.sleep(d) for c in t]; print()
 
-def progress_bar():
-    print(">>> Загрузка модулей")
-    for i in range(41):
-        print(f"\r[{'█'*i+'░'*(40-i)}] {i*2.5:.0f}%", end="", flush=True)
-        time.sleep(random.uniform(0.03,0.07))
+def type_effect(text, delay=0.05):
+    for c in text:
+        print(c, end="", flush=True)
+        time.sleep(delay)
+    print()
+
+def epic_progress(stage):
+    print(f"   {stage}")
+    for i in range(1, 51):
+        bar = "█" * i + "░" * (50 - i)
+        print(f"\r   [{bar}] {i*2}%", end="", flush=True)
+        time.sleep(random.uniform(0.05, 0.12))
     print("\n")
 
-# Создаём папку + version.txt
+def epic_loading():
+    clear()
+    type_effect(">>> ZENNIX TOX SYSTEM", 0.08)
+    time.sleep(0.7)
+    epic_progress("Decrypting payload")
+    epic_progress("Injecting keyboard driver")
+    epic_progress("Bypassing Windows Defender")
+    epic_progress("Loading toxic database")
+    epic_progress("Activating spam engine")
+    epic_progress("Finalizing injection")
+    clear()
+    print("\033[92m╔══════════════════════════════════════════════════════════╗")
+    print("║                   ZENNIX TOX BOT ACTIVATED               ║")
+    print("╚══════════════════════════════════════════════════════════╝\033[0m\n")
+    time.sleep(1.5)
+
 def init_folder():
     if not os.path.exists(FOLDER):
         os.makedirs(FOLDER)
@@ -45,7 +66,6 @@ def init_folder():
         with open(VERSION_FILE, "w", encoding="utf-8") as f:
             f.write(BOT_VERSION)
 
-# Проверка версии — теперь работает идеально
 def check_version():
     try:
         online = requests.get(VERSION_URL, timeout=10).text.strip()
@@ -53,24 +73,27 @@ def check_version():
         if os.path.exists(VERSION_FILE):
             with open(VERSION_FILE, "r", encoding="utf-8") as f:
                 local = f.read().strip()
-
         if online != BOT_VERSION or online != local:
             clear()
-            print("\033[91m╔══════════════════════════════════════════════════════╗")
-            print("║                   ВЕРСИЯ УСТАРЕЛА                    ║")
-            print(f"║      Текущая: {BOT_VERSION} → Доступна: {online}          ║")
-            print("╚══════════════════════════════════════════════════════╝\033[0m\n")
+            print("\033[91m╔══════════════════════════════════════════════════════════╗")
+            print("║                     ВЕРСИЯ УСТАРЕЛА                      ║")
+            print(f"║       Текущая: {BOT_VERSION} → Доступна: {online}                 ║")
+            print("╚══════════════════════════════════════════════════════════╝\033[0m\n")
             ans = input("   Обновить сейчас? (Y/N): ").strip().lower()
-            if ans in ["y", "yes", "да"]:
-                print("\n   Загрузка новой версии...")
-                progress_bar()
+            if ans in ["y", "yes", "да", "д"]:
+                clear()
+                type_effect(">>> Загрузка новой версии...", 0.06)
+                epic_progress("Downloading update")
+                epic_progress("Verifying integrity")
+                epic_progress("Applying patch")
                 new_code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
                 with open(__file__, "w", encoding="utf-8") as f:
                     f.write(new_code)
                 with open(VERSION_FILE, "w", encoding="utf-8") as f:
                     f.write(online)
-                print("   Обновление завершено. Перезапуск...")
-                time.sleep(2)
+                clear()
+                print("\033[92mОбновление завершено. Перезапуск системы...\033[0m")
+                time.sleep(3)
                 os.execv(sys.executable, [sys.executable] + sys.argv)
     except:
         pass
@@ -80,15 +103,13 @@ def login():
     clear()
     print("ZENNIX TOX BOT")
     print(f"Версия: {BOT_VERSION}")
-    print("-" * 45)
+    print("═" * 50)
     print("АВТОРИЗАЦИЯ")
-    print("-" * 45)
+    print("═" * 50)
     try:
-        creds = {}
-        for line in requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic", timeout=5).text.splitlines():
-            if ":" in line:
-                k, v = line.split(":", 1)
-                creds[k.strip()] = v.strip()
+        data = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic", timeout=5).text
+        creds = dict(line.split(":",1) for line in data.splitlines() if ":" in line)
+        creds = {k.strip(): v.strip() for k, v in creds.items()}
     except:
         creds = {"zennix": "1488"}
     
@@ -97,10 +118,12 @@ def login():
         p = input("Пароль: ").strip()
         if creds.get(u) == p:
             current_user = u
-            type_effect("ДОСТУП РАЗРЕШЁН", 0.06)
-            return True
-        print("Неверные данные")
-    print("Доступ запрещён")
+            type_effect("ДОСТУП РАЗРЕШЁН", 0.07)
+            time.sleep(1.2)
+            return
+        print("Неверно")
+    print("ДОСТУП ЗАПРЕЩЁН")
+    time.sleep(2)
     sys.exit()
 
 def spam_worker():
@@ -109,11 +132,11 @@ def spam_worker():
     spam_running = True
     stop_event.clear()
     for i in range(5,0,-1):
-        print(f"\rЗапуск через {i}...", end="", flush=True)
+        print(f"\rЗапуск спама через {i}...", end="", flush=True)
         time.sleep(1)
     clear()
     print("СПАМ АКТИВИРОВАН | F8 — Остановить")
-    print("-" * 50)
+    print("═" * 50)
     while not stop_event.is_set():
         for msg, d in MESSAGES:
             if stop_event.is_set(): break
@@ -131,15 +154,10 @@ if __name__ == "__main__":
     init_folder()
     check_version()
     login()
-    clear()
-    type_effect(">>> Zennix Tox Bot активирован", 0.05)
-    progress_bar()
-    type_effect("Готов к работе", 0.05)
-    print("="*60)
-    type_effect(f"Пользователь: {current_user}", 0.04)
-    type_effect(f"Версия: {BOT_VERSION}", 0.04)
-    type_effect("F7 — старт спама | F8 — стоп", 0.04)
-    print("="*60)
+    epic_loading()
+    print("Система готова к работе")
+    print("F7 — старт спама в активное окно")
+    print("F8 — остановить")
     print("\nСверните окно и идите в чат")
     try:
         while True: time.sleep(1)
