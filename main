@@ -1,50 +1,196 @@
-# ZENNIX TOX INJECTOR — КРАСИВЫЙ, ЧИСТЫЙ, БЕЗ ПРОВЕРОК
-import requests, sys, time, os
+# Zennix tox bot — v1.12.5 — ВСЁ РАБОТАЕТ КАК НАДО
+import requests, os, sys, time, random, keyboard, threading
+
+BOT_VERSION = "1.12.5"
+VERSION_URL = "https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/version"
+FOLDER = r"C:\zennix"
+CONFIG = os.path.join(FOLDER, "config.txt")
+LOCAL_VERSION_FILE = os.path.join(FOLDER, "version.txt")
+
+# === КОНФИГ ===
+def load_cfg():
+    if not os.path.exists(CONFIG): return None
+    try:
+        l = [x.strip() for x in open(CONFIG, encoding="utf-8")]
+        if len(l) >= 3:
+            return {"user": l[0], "pass": l[1], "delay": float(l[2])}
+        elif len(l) == 1:
+            return {"delay": float(l[0])}
+    except: pass
+    return None
+
+cfg = load_cfg()
+DELAY = cfg["delay"] if cfg and "delay" in cfg else 0.8
+saved_user = cfg["user"] if cfg and "user" in cfg else None
+saved_pass = cfg["pass"] if cfg and "pass" in cfg else None
+
+MESSAGES = [(m, DELAY) for m in [
+    "у тебя ммть шлюхв","я кнк месник","ей руки отрезал","верещтт свинка хоххлятская",
+    "ебанный ледниковый период","сид обосранный","клыкастый я тебе с хуя зубы выбил",
+    "у тя мамка в копьем в жопе танцует","норм ты ебанная чибурашка","клапоухий пидор",
+    "педик волосатый","пинок под жопу дам те","в клетку улетишь","жопой коноплю собираешь",
+    "дырявый","петух","кусок говна","че за хуйня хуесос","ебанный индеец"
+]]
+
+stop_event = threading.Event()
+spam_active = False
+current_user = "unknown"
 
 def clear(): os.system("cls" if os.name=="nt" else "clear")
 def t(text, d=0.04):
     for c in text: print(c, end="", flush=True); time.sleep(d)
     print()
 
-clear()
-print("\033[95m" + r"""
+def banner():
+    clear()
+    print("\033[95m" + r"""
  ███████╗███████╗███╗   ██╗███╗   ██╗██╗██╗  ██╗
  ╚══███╔╝██╔════╝████╗  ██║████╗  ██║██║╚██╗██╔╝
    ███╔╝ █████╗  ██╔██╗ ██║██╔██╗ ██║██║ ╚███╔╝ 
   ███╔╝  ██╔══╝  ██║╚██╗██║██║╚██╗██║██║ ██╔██╗ 
  ███████╗███████╗██║ ╚████║██║ ╚████║██║██╔╝ ██╗
- ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝
-           \033[91mTOXIC INJECTOR v2.0\033[0m
-""")
+ ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝ v1.12.5
+    \033[0m\033[91m              ╔═ TOXIC RAID SYSTEM ═╗\033[0m
+    """)
 
-t("   Инжект ядра...")
-
-try:
-    code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=25).text
-    
-    print(f"   Ядро получено", end="")
-    for _ in range(3):
-        print(".", end="", flush=True)
-        time.sleep(0.4)
+def progress(stage):
+    print(f"   \033[90m└─> {stage}\033[0m")
+    for i in range(1, 41):
+        bar = "█" * i + "░" * (40 - i)
+        print(f"\r   \033[93m[{bar}] {i*2.5:.1f}%\033[0m", end="", flush=True)
+        time.sleep(random.uniform(0.03, 0.09))
     print("\n")
-    
-    for i in range(1, 11):
-        print(f"\r   Инжект: [{'█'*i}{'░'*(10-i)}] {i*10}%", end="", flush=True)
-        time.sleep(0.11)
-    
-    print("\n\033[92m   РЕЙД-СИСТЕМА ГОТОВА\033[0m")
-    time.sleep(0.7)
-    exec(code)
 
-except:
-    print("\033[91m\n   Ошибка связи. Повтор...\033[0m")
-    time.sleep(2)
-    # Повторная попытка
+# === ПРОВЕРКА ВЕРСИИ ПО ЛОКАЛЬНОМУ version.txt ===
+def check_update():
     try:
-        code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=25).text
-        print("\033[92m   Ядро получено. Запуск...\033[0m")
-        time.sleep(1)
-        exec(code)
-    except:
-        print("\033[91m   Критическая ошибка. Проверь интернет или репозиторий.\033[0m")
-        time.sleep(5)
+        online = requests.get(VERSION_URL, timeout=10).text.strip()
+
+        # Читаем локальную версию
+        if os.path.exists(LOCAL_VERSION_FILE):
+            local = open(LOCAL_VERSION_FILE, encoding="utf-8").read().strip()
+        else:
+            local = "0.0.0"
+
+        if online != local:
+            clear()
+            print("\033[91m╔══════════════════════════════════════╗")
+            print("║        ОБНАРУЖЕНО ОБНОВЛЕНИЕ         ║")
+            print(f"║   Локальная: {local}                       ║")
+            print(f"║   Онлайн:    {online}                       ║")
+            print("╚══════════════════════════════════════╝\033[0m\n")
+            if input("   Обновить сейчас? (y/n): ").lower() in ["y", "да"]:
+                progress("Downloading update")
+                progress("Applying patch")
+                code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
+                with open(__file__, "w", encoding="utf-8") as f: f.write(code)
+                # Записываем новую версию в version.txt
+                with open(LOCAL_VERSION_FILE, "w", encoding="utf-8") as f: f.write(online)
+                print("\033[92m   Обновление завершено. Перезапуск...\033[0m")
+                time.sleep(2)
+                os.execv(sys.executable, [sys.executable] + sys.argv)
+    except: pass
+
+def login():
+    global current_user
+    if saved_user and saved_pass:
+        current_user = saved_user
+        clear()
+        t(f"   Автологин: \033[92m{current_user}\033[0m")
+        time.sleep(1.5)
+        return
+
+    clear()
+    print("\033[95m   Zennix tox bot | Авторизация\033[0m")
+    try:
+        creds = {l.split(":")[0].strip():l.split(":")[1].strip()
+                for l in requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic",timeout=5).text.splitlines() if ":" in l}
+    except: creds = {"zennix":"1488"}
+
+    for _ in range(3):
+        u = input("\n   Логин: ").strip()
+        p = input("   Пароль: ").strip()
+        if creds.get(u) == p:
+            current_user = u
+            rem = input("   Запомнить сессию? (y/n): ").lower() in ["y","да"]
+            with open(CONFIG, "w", encoding="utf-8") as f:
+                f.write(f"{u}\n{p}\n{DELAY}" if rem else str(DELAY))
+            t("   Доступ разрешён")
+            return
+        print("   Неверно")
+    print("   Доступ запрещён"); sys.exit()
+
+def change_delay():
+    global DELAY, MESSAGES
+    try:
+        new = float(input(f"   Текущая задержка: {DELAY}s → Новая (0.1-5.0): ").replace(",","."))
+        if 0.1 <= new <= 5.0:
+            DELAY = new
+            MESSAGES = [(m,new) for m,_ in MESSAGES]
+            with open(CONFIG, "r", encoding="utf-8") as f: lines = f.readlines()
+            lines[-1] = str(new) + "\n"
+            with open(CONFIG, "w", encoding="utf-8") as f: f.writelines(lines)
+            t(f"   Задержка изменена: \033[92m{new}s\033[0m")
+        else: t("   Диапазон 0.1–5.0!")
+    except: t("   Ошибка ввода")
+    time.sleep(2)
+
+def menu():
+    while True:
+        clear()
+        banner()
+        print(f"   \033[90mПользователь:\033[0m \033[96m{current_user}\033[0m    \033[90mЗадержка:\033[0m \033[93m{DELAY}s\033[0m\n")
+        print("   \033[95m╔══════════════════════════════════╗\033[0m")
+        print("   \033[95m║  1. Начать рейд (f7)             ║\033[0m")
+        print("   \033[95m║  2. Сменить задержку             ║\033[0m")
+        print("   \033[95m║  3. Выйти с аккаунта             ║\033[0m")
+        print("   \033[95m║  4. Полный выход                 ║\033[0m")
+        print("   \033[95m╚══════════════════════════════════╝\033[0m")
+        ch = input("\n   \033[90mВыбор → \033[0m")
+        if ch == "1": input("\n   Перейди в чат → нажми f7 → enter...")
+        elif ch == "2": change_delay()
+        elif ch == "3":
+            if os.path.exists(CONFIG): os.remove(CONFIG)
+            t("   Сессия удалена. Перезапуск...")
+            time.sleep(2)
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+        elif ch == "4": t("   До связи, токсик."); sys.exit()
+
+def spam():
+    global spam_active
+    if spam_active: return
+    spam_active = True
+    stop_event.clear()
+    for i in range(5,0,-1):
+        print(f"\r   Запуск рейда через {i}...", end="", flush=True); time.sleep(1)
+    clear()
+    print("\033[91m   РЕЙД АКТИВИРОВАН | f8 — стоп\033[0m")
+    print("   " + "─"*50)
+    while not stop_event.is_set():
+        for txt,_ in MESSAGES:
+            if stop_event.is_set(): break
+            keyboard.write(txt)
+            keyboard.press_and_release("enter")
+            time.sleep(DELAY)
+    spam_active = False
+    print("\n   Рейд завершён")
+
+keyboard.add_hotkey("f7", lambda: threading.Thread(target=spam,daemon=True).start())
+keyboard.add_hotkey("f8", stop_event.set)
+
+# === СТАРТ ===
+if not os.path.exists(FOLDER):
+    os.makedirs(FOLDER)
+    os.system(f'attrib +h "{FOLDER}"')
+
+clear()
+banner()
+progress("Hook installation")
+progress("Bypassing protections")
+progress("Loading toxic database")
+progress("Initializing raid engine")
+progress("Ready to raid")
+
+check_update()  # ← теперь проверяет локальный version.txt и обновляет его при апдейте
+login()
+menu()
