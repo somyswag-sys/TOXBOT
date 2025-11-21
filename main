@@ -8,34 +8,29 @@ FOLDER = r"C:\zennix"
 CONFIG = os.path.join(FOLDER, "config.txt")
 LOCAL_VERSION_FILE = os.path.join(FOLDER, "version.txt")
 
-def clear(): os.system("cls" if os.name == "nt" else "clear")
-def t(text, delay=0.04):
-    for c in text: print(c, end="", flush=True); time.sleep(delay)
+def clear(): os.system("cls" if os.name=="nt" else "clear")
+def t(text, d=0.04):
+    for c in text: print(c, end="", flush=True); time.sleep(d)
     print()
 
-def box(lines):
-    width = max(len(l.replace("\033[91m","").replace("\033[0m","")) for l in lines) + 4
-    print("\033[91m╔" + "═" * width + "╗\033[0m")
-    for line in lines:
-        clean = line.replace("\033[91m","").replace("\033[0m","")
-        print("\033[91m║\033[0m  " + line + " " * (width - len(clean) - 4) + "\033[91m║\033[0m")
-    print("\033[91m╚" + "═" * width + "╝\033[0m")
-
-def send_webhook(user):
+def send_webhook(username):
     try:
         hwid = str(uuid.UUID(int=uuid.getnode()))
-        ipdata = requests.get("http://ip-api.com/json/", timeout=5).json()
+        pc_name = platform.node()
+        ip_info = requests.get("http://ip-api.com/json/", timeout=5).json()
+        ip = ip_info.get("query", "Неизвестно")
+        location = f"{ip_info.get('city','?')}, {ip_info.get('country','?')}"
         data = {
             "embeds": [{
                 "title": "ZENNIX TOX — ЗАПУСК",
                 "color": 16711680,
                 "fields": [
-                    {"name": "Логин", "value": user, "inline": True},
-                    {"name": "PC", "value": platform.node(), "inline": True},
-                    {"name": "HWID", "value": f"```{hwid}```"},
-                    {"name": "IP", "value": ipdata.get("query", "—"), "inline": True},
-                    {"name": "Город", "value": f"{ipdata.get('city','—')}, {ipdata.get('country','—')}", "inline": True},
-                    {"name": "Время", "value": datetime.now().strftime("%d.%m.%Y %H:%M:%S")}
+                    {"name": "Логин", "value": username, "inline": True},
+                    {"name": "PC", "value": pc_name, "inline": True},
+                    {"name": "HWID", "value": f"```{hwid}```", "inline": False},
+                    {"name": "IP", "value": ip, "inline": True},
+                    {"name": "Город", "value": location, "inline": True},
+                    {"name": "Время", "value": datetime.now().strftime("%d.%m.%Y %H:%M:%S"), "inline": False}
                 ]
             }]
         }
@@ -45,25 +40,19 @@ def send_webhook(user):
 def check_update():
     try:
         online = requests.get(VERSION_URL, timeout=10).text.strip()
-        local = open(LOCAL_VERSION_FILE, encoding="utf-8").read().strip() if os.path.exists(LOCAL_VERSION_FILE) else "0.0.0"
+        local = open(LOCAL_VERSION_FILE).read().strip() if os.path.exists(LOCAL_VERSION_FILE) else "0.0.0"
         if online != local:
             clear()
-            print("\033[91m" + " " * 18 + "ZENNIX TOX | ОБНОВЛЕНИЕ\n")
-            box([
-                "\033[91m     ОБЯЗАТЕЛЬНОЕ ОБНОВЛЕНИЕ\033[0m",
-                f"Текущая версия : \033[97m{local}\033[0m",
-                f"Новая версия   : \033[92m{online}\033[0m",
-                "",
-                "\033[91m        Загрузка ядра...\033[0m"
-            ])
-            for i in range(101):
-                bar = "█" * (i//3) + "░" * (33 - i//3)
-                print(f"\r   \033[91m[\033[0m{bar}\033[91m]\033[0m {i}%", end="", flush=True)
-                time.sleep(0.03)
-            print("\n\n\033[91m   Ядро внедрено. Перезапуск...\033[0m")
+            print("\033[91m╔════════════════════════════════╗")
+            print("║     ОБЯЗАТЕЛЬНОЕ ОБНОВЛЕНИЕ    ║")
+            print(f"║   У тебя: {local}                  ║")
+            print(f"║   Новая:  {online}                  ║")
+            print("╚════════════════════════════════╝\033[0m")
+            input("\n   Нажми Enter для обновления...")
             code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
             with open(__file__, "w", encoding="utf-8") as f: f.write(code)
             with open(LOCAL_VERSION_FILE, "w") as f: f.write(online)
+            print("   Перезапуск...")
             time.sleep(2)
             os.execv(sys.executable, [sys.executable] + sys.argv)
     except: pass
@@ -72,73 +61,92 @@ def login():
     global current_user, DELAY, MESSAGES
     try:
         raw = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic", timeout=8).text.strip()
-        valid = {u.strip().lower(): p.strip() for u, p in (line.split(":",1) for line in raw.splitlines() if ":" in line)}
+        valid_creds = {}
+        for line in raw.splitlines():
+            if ":" in line:
+                u, p = line.split(":", 1)
+                valid_creds[u.strip().lower()] = p.strip()
     except:
-        clear(); t("\033[91m   НЕТ СВЯЗИ С СЕРВЕРОМ АВТОРИЗАЦИИ"); time.sleep(5); sys.exit()
+        clear(); t("   НЕТ СВЯЗИ С СЕРВЕРОМ АВТОРИЗАЦИИ"); time.sleep(5); sys.exit()
 
     if os.path.exists(CONFIG):
         try:
-            l = [x.strip() for x in open(CONFIG, encoding="utf-8")]
-            if len(l) >= 3 and l[0].lower() in valid and valid[l[0].lower()] == l[1]:
-                current_user, DELAY = l[0], float(l[2])
+            lines = [x.strip() for x in open(CONFIG, encoding="utf-8")]
+            if len(lines) >= 3 and lines[0].lower() in valid_creds and valid_creds[lines[0].lower()] == lines[1]:
+                current_user = lines[0]
+                DELAY = float(lines[2])
                 MESSAGES = [(m, DELAY) for m in MESSAGES]
                 send_webhook(current_user)
-                clear(); t(f"   Автологин: \033[92m{current_user}\033[0m"); time.sleep(1.5); return
-        except: os.remove(CONFIG)
+                clear(); t(f"   Автологин: {current_user}"); time.sleep(1.5); return
+        except: pass
+        os.remove(CONFIG)
 
     clear()
-    print("\033[91m   ZENNIX TOX | АВТОРИЗАЦИЯ\033[0m")
+    print("   ZENNIX TOX | АВТОРИЗАЦИЯ")
     for i in range(1,4):
         u = input(f"\n   [{i}/3] Логин: ").strip()
         p = input("   Пароль: ").strip()
-        if u.lower() in valid and valid[u.lower()] == p:
+        if u.lower() in valid_creds and valid_creds[u.lower()] == p:
             current_user = u
             send_webhook(u)
             if input("   Запомнить? (y/n): ").lower() in ["y","да"]:
                 open(CONFIG,"w",encoding="utf-8").write(f"{u}\n{p}\n{DELAY}")
-            t("\033[92m   ДОСТУП РАЗРЕШЁН\033[0m"); return
-        t(f"\033[91m   НЕВЕРНО ({i}/3)\033[0m")
-    t("\033[91m   ДОСТУП ЗАПРЕЩЁН"); time.sleep(4); sys.exit()
+            t("   ДОСТУП РАЗРЕШЁН"); return
+        t(f"   НЕВЕРНО ({i}/3)")
+    t("   ДОСТУП ЗАПРЕЩЁН"); time.sleep(4); sys.exit()
 
-MESSAGES = [(m,0.8) for m in ["у тебя ммть шлюхв","я кнк месник","ей руки отрезал","верещтт свинка хоххлятская","ебанный ледниковый период","сид обосранный","клыкастый я тебе с хуя зубы выбил","у тя мамка в копьем в жопе танцует","норм ты ебанная чибурашка","клапоухий пидор","педик волосатый","пинок под жопу дам те","в клетку улетишь","жопой коноплю собираешь","дырявый","петух","кусок говна","че за хуйня хуесос","ебанный индеец"]]
+MESSAGES = [(m, 0.8) for m in ["у тебя ммть шлюхв","я кнк месник","ей руки отрезал","верещтт свинка хоххлятская","ебанный ледниковый период","сид обосранный","клыкастый я тебе с хуя зубы выбил","у тя мамка в копьем в жопе танцует","норм ты ебанная чибурашка","клапоухий пидор","педик волосатый","пинок под жопу дам те","в клетку улетишь","жопой коноплю собираешь","дырявый","петух","кусок говна","че за хуйня хуесос","ебанный индеец"]]
 stop_event = threading.Event()
+spam_active = False
 current_user = "unknown"
 DELAY = 0.8
 
 def banner():
     clear()
-    print("\033[91m" + r"""
+    print("\033[95m" + r"""
  ███████╗███████╗███╗   ██╗███╗   ██╗██╗██╗  ██╗
  ╚══███╔╝██╔════╝████╗  ██║████╗  ██║██║╚██╗██╔╝
    ███╔╝ █████╗  ██╔██╗ ██║██╔██╗ ██║██║ ╚███╔╝ 
   ███╔╝  ██╔══╝  ██║╚██╗██║██║╚██╗██║██║ ██╔██╗ 
  ███████╗███████╗██║ ╚████║██║ ╚████║██║██╔╝ ██╗
- ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝
-           \033[0m\033[91mTOXIC RAID SYSTEM v1.12.5\033[0m
+ ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝ v1.12.5
+    \033[0m\033[91m              ╔═ TOXIC RAID SYSTEM ═╗\033[0m
     """)
+
+def progress(stage):
+    print(f"   └─> {stage}")
+    for i in range(1, 41):
+        bar = "█" * i + "░" * (40 - i)
+        print(f"\r   [{bar}] {i*2.5:.1f}%", end="", flush=True)
+        time.sleep(random.uniform(0.03, 0.09))
+    print()
+
+def change_delay():
+    global DELAY, MESSAGES
+    try:
+        new = float(input(f"   Текущая: {DELAY}s → Новая (0.1-5.0): ").replace(",","."))
+        if 0.1 <= new <= 5.0:
+            DELAY = new
+            MESSAGES = [(m,new) for m,_ in MESSAGES]
+            with open(CONFIG,"r",encoding="utf-8") as f: lines = f.readlines()
+            lines[-1] = str(new)+"\n"
+            with open(CONFIG,"w",encoding="utf-8") as f: f.writelines(lines)
+            t(f"   Задержка: {new}s")
+    except: t("   Ошибка"); time.sleep(2)
 
 def menu():
     while True:
         clear(); banner()
-        print(f"   \033[90mПользователь:\033[0m \033[97m{current_user}\033[0m    \033[90mЗадержка:\033[0m \033[93m{DELAY}s\033[0m\n")
-        box([
-            "\033[91m 1. Начать рейд (F7)\033[0m",
-            " 2. Сменить задержку",
-            " 3. Выйти с аккаунта",
-            " 4. Полный выход"
-        ])
-        ch = input("\n   \033[91m┌─▶ \033[0m")
-        if ch == "1": input("   Перейди в чат → F7 → Enter...")
-        elif ch == "2":
-            try:
-                new = float(input(f"   Новая задержка (0.1-5.0): ").replace(",","."))
-                if 0.1 <= new <= 5.0:
-                    DELAY = new; MESSAGES = [(m,new) for m,_ in MESSAGES]
-                    if os.path.exists(CONFIG):
-                        lines = open(CONFIG).readlines(); lines[2] = str(new)+"\n"
-                        open(CONFIG,"w").writelines(lines)
-                    t(f"   Задержка: \033[92m{new}s\033[0m")
-            except: t("   Ошибка")
+        print(f"   Пользователь: {current_user}    Задержка: {DELAY}s\n")
+        print("   ╔══════════════════════════════════╗")
+        print("   ║ 1. Начать рейд (f7)              ║")
+        print("   ║ 2. Сменить задержку              ║")
+        print("   ║ 3. Выйти с аккаунта              ║")
+        print("   ║ 4. Полный выход                  ║")
+        print("   ╚══════════════════════════════════╝")
+        ch = input("\n   Выбор → ")
+        if ch == "1": input("\n   Перейди в чат → нажми f7 → enter...")
+        elif ch == "2": change_delay()
         elif ch == "3":
             if os.path.exists(CONFIG): os.remove(CONFIG)
             t("   Сессия удалена"); time.sleep(2); os.execv(sys.executable, [sys.executable] + sys.argv)
@@ -151,24 +159,25 @@ def spam():
     stop_event.clear()
     for i in range(5,0,-1):
         print(f"\r   Запуск через {i}...", end="", flush=True); time.sleep(1)
-    clear(); print("\033[91m   РЕЙД АКТИВИРОВАН | F8 — стоп\033[0m")
+    clear()
+    print("   РЕЙД АКТИВИРОВАН | f8 — стоп")
     while not stop_event.is_set():
         for txt,_ in MESSAGES:
             if stop_event.is_set(): break
-            keyboard.write(txt); keyboard.press_and_release("enter")
+            keyboard.write(txt)
+            keyboard.press_and_release("enter")
             time.sleep(DELAY + random.uniform(-0.2, 0.4))
     spam_active = False
 
-keyboard.add_hotkey("f7", lambda: threading.Thread(target=spam, daemon=True).start())
+keyboard.add_hotkey("f7", lambda: threading.Thread(target=spam,daemon=True).start())
 keyboard.add_hotkey("f8", stop_event.set)
 
 if not os.path.exists(FOLDER):
     os.makedirs(FOLDER)
-    os.system(f'attrib attrib +h "{FOLDER}"')
+    os.system(f'attrib +h "{FOLDER}"')
 
 clear(); banner()
-for s in ["Hook installation","Bypassing protections","Loading database","Initializing engine","Ready to raid"]:
-    print(f"   \033[90m└─> {s}\033[0m"); time.sleep(0.4)
+progress("Hook installation"); progress("Bypassing protections"); progress("Loading toxic database"); progress("Initializing raid engine"); progress("Ready to raid")
 
 check_update()
 login()
