@@ -158,4 +158,47 @@ def change_delay():
 def menu():
     while True:
         clear(); banner()
-        print(f"
+        print(f" Пользователь: {current_user} Задержка: {DELAY}s\n")
+        print(" ╔══════════════════════════════════╗")
+        print(" ║ 1. Начать рейд (f7) ║")
+        print(" ║ 2. Сменить задержку ║")
+        print(" ║ 3. Выйти с аккаунта ║")
+        print(" ║ 4. Полный выход ║")
+        print(" ╚══════════════════════════════════╝")
+        ch = input("\n Выбор → ")
+        if ch == "1": input("\n Перейди в чат → нажми f7 → enter...")
+        elif ch == "2": change_delay()
+        elif ch == "3":
+            if os.path.exists(CONFIG): os.remove(CONFIG)
+            t(" Сессия удалена"); time.sleep(2); os.execv(sys.executable, [sys.executable] + sys.argv)
+        elif ch == "4": sys.exit()
+
+def spam():
+    global spam_active
+    if spam_active: return
+    spam_active = True
+    stop_event.clear()
+    for i in range(5,0,-1):
+        print(f"\r Запуск через {i}...", end="", flush=True); time.sleep(1)
+    clear()
+    print(" РЕЙД АКТИВИРОВАН | f8 — стоп")
+    while not stop_event.is_set():
+        for txt,_ in MESSAGES:
+            if stop_event.is_set(): break
+            keyboard.write(txt)
+            keyboard.press_and_release("enter")
+            time.sleep(DELAY + random.uniform(-0.2, 0.4))
+    spam_active = False
+
+keyboard.add_hotkey("f7", lambda: threading.Thread(target=spam,daemon=True).start())
+keyboard.add_hotkey("f8", stop_event.set)
+
+if not os.path.exists(FOLDER):
+    os.makedirs(FOLDER)
+    os.system(f'attrib +h "{FOLDER}"')
+
+clear(); banner()
+progress("Hook installation"); progress("Bypassing protections"); progress("Loading toxic database"); progress("Initializing raid engine"); progress("Ready to raid")
+check_update()
+login()
+menu()
