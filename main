@@ -1,175 +1,63 @@
-# Zennix tox bot — v1.12.5 — НЕПРОБИВАЕМАЯ АВТОРИЗАЦИЯ + ВСЁ РАБОТАЕТ
-import requests, os, sys, time, random, keyboard, threading
-
-BOT_VERSION = "1.12.5"
-VERSION_URL = "https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/version"
-FOLDER = r"C:\zennix"
-CONFIG = os.path.join(FOLDER, "config.txt")
-LOCAL_VERSION_FILE = os.path.join(FOLDER, "version.txt")
-
-# === ПРОВЕРКА ВЕРСИИ ===
-def check_update():
-    try:
-        online = requests.get(VERSION_URL, timeout=10).text.strip()
-        local = open(LOCAL_VERSION_FILE, encoding="utf-8").read().strip() if os.path.exists(LOCAL_VERSION_FILE) else "0.0.0"
-        if online != local:
-            clear()
-            print("\033[91m╔══════════════════════════════════════╗")
-            print("║       ОБЯЗАТЕЛЬНОЕ ОБНОВЛЕНИЕ        ║")
-            print(f"║   У тебя: {local}           ║")
-            print(f"║   Новая:  {online}           ║")
-            print("╚══════════════════════════════════════╝\033[0m\n")
-            if input("   Обновить? (y/n): ").lower() in ["y","да"]:
-                progress("Downloading update")
-                code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
-                with open(__file__, "w", encoding="utf-8") as f: f.write(code)
-                with open(LOCAL_VERSION_FILE, "w", encoding="utf-8") as f: f.write(online)
-                print("\033[92m   Перезапуск...\033[0m")
-                time.sleep(2)
-                os.execv(sys.executable, [sys.executable] + sys.argv)
-            else:
-                sys.exit()
-    except: pass
-
-# === НЕПРОБИВАЕМЫЙ ЛОГИН ===
 def login():
     global current_user, DELAY, MESSAGES
+    
+    # === ЗАГРУЗКА СПИСКА РАЗРЕШЁННЫХ ЛОГИНОВ С ГИТА ===
     try:
         raw = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic", timeout=8).text.strip()
-        valid_creds = {}
-        for line in raw.splitlines():
-            if ":" in line and line.count(":") == 1:
-                u, p = line.split(":", 1)
-                valid_creds[u.strip().lower()]indigo = p.strip()
+        allowed_logins = {line.split(":",1)[0].strip().lower() 
+                         for line in raw.splitlines() if ":" in line}
     except:
-        clear(); t("\033[91m   НЕТ СВЯЗИ С СЕРВЕРОМ АВТОРИЗАЦИИ"); time.sleep(4); sys.exit()
+        clear()
+        t("\033[91m   НЕТ СВЯЗИ С СЕРВЕРОМ АВТОРИЗАЦИИ")
+        t("   БОТ ЗАКРЫВАЕТСЯ...\033[0m")
+        time.sleep(5)
+        sys.exit()
 
-    # Проверка config — если фейк, удаляем
+    # === ПРОВЕРКА CONFIG — ЕСЛИ ЛОГИН НЕ В СПИСКЕ — УДАЛЯЕМ КОНФИГ И НЕ ПУСКАЕМ ===
     if os.path.exists(CONFIG):
         try:
-            lines = [x.strip() for x in open(CONFIG, encoding="utf-8")]
-            if len(lines) >= 3:
-                su, sp, sd = lines[0].lower(), lines[1], lines[2]
-                if su in valid_creds and valid_creds[su] == sp:
-                    current_user = lines[0]
-                    DELAY = float(sd)
-                    MESSAGES = [(m, DELAY) for m in MESSAGES]
-                    clear(); t(f"   Автологин: \033[92m{current_user}\033[0m"); time.sleep(1.5); return
+            saved_login = open(CONFIG, encoding="utf-8").readline().strip().lower()
+            if saved_login in allowed_logins:
+                # Логин валидный — автологин
+                lines = [x.strip() for x in open(CONFIG, encoding="utf-8")]
+                current_user = lines[0]
+                DELAY = float(lines[2])
+                MESSAGES = [(m, DELAY) for m in MESSAGES]
+                clear()
+                t(f"   Автологин: \033[92m{current_user}\033[0m")
+                time.sleep(1.5)
+                return
         except: pass
-        os.remove(CONFIG)  # Удаляем битый/фейковый конфиг
+        
+        # Логин не в списке или config битый — УДАЛЯЕМ
+        os.remove(CONFIG)
+        clear()
 
+    # === РУЧНОЙ ВВОД ===
     clear()
     print("\033[95m   ZENNIX TOX | АВТОРИЗАЦИЯ\033[0m")
     for i in range(1,4):
         u = input(f"\n   [{i}/3] Логин: ").strip()
+        if u.lower() not in allowed_logins:
+            t(f"   \033[91mЛОГИН НЕ СУЩЕСТВУЕТ ({i}/3)\033[0m")
+            continue
+            
         p = input("   Пароль: ").strip()
-        if u.lower() in valid_creds and valid_creds[u.lower()] == p:
-            current_user = u
-            if input("   Запомнить? (y/n): ").lower() in ["y","да"]:
-                open(CONFIG,"w",encoding="utf-8").write(f"{u}\n{p}\n{DELAY}")
-            t("   \033[92mДОСТУП РАЗРЕШЁН\033[0m")
-            return
-        t(f"   \033[91mНЕВЕРНО ({i}/3)\033[0m")
-    t("\033[91m   ДОСТУП ЗАПРЕЩЁН"); time.sleep(4); sys.exit()
+        # Полная проверка логин+пароль
+        try:
+            real_pass = next(p for l in raw.splitlines() 
+                           if l.lower().startswith(u.lower() + ":") and ":" in l).split(":",1)[1]
+            if p == real_pass:
+                current_user = u
+                if input("   Запомнить? (y/n): ").lower() in ["y","да"]:
+                    open(CONFIG,"w",encoding="utf-8").write(f"{u}\n{p}\n{DELAY}")
+                t("   \033[92mДОСТУП РАЗРЕШЁН\033[0m")
+                return
+        except: pass
+            
+        t(f"   \033[91mНЕВЕРНЫЙ ПАРОЛЬ ({i}/3)\033[0m")
 
-# === ОСТАЛЬНОЕ ===
-MESSAGES = [("у тебя ммть шлюхв",0.8),("я кнк месник",0.8),("ей руки отрезал",0.8),("верещтт свинка хоххлятская",0.8),
-            ("ебанный ледниковый период",0.8),("сид обосранный",0.8),("клыкастый я тебе с хуя зубы выбил",0.8),
-            ("у тя мамка в копьем в жопе танцует",0.8),("норм ты ебанная чибурашка",0.8),("клапоухий пидор",0.8),
-            ("педик волосатый",0.8),("пинок под жопу дам те",0.8),("в клетку улетишь",0.8),("жопой коноплю собираешь",0.8),
-            ("дырявый",0.8),("петух",0.8),("кусок говна",0.8),("че за хуйня хуесос",0.8),("ебанный индеец",0.8)]
-
-stop_event = threading.Event()
-spam_active = False
-current_user = "unknown"
-DELAY = 0.8
-
-def clear(): os.system("cls" if os.name=="nt" else "clear")
-def t(text, d=0.04):
-    for c in text: print(c, end="", flush=True); time.sleep(d)
-    print()
-
-def banner():
     clear()
-    print("\033[95m" + r"""
- ███████╗███████╗███╗   ██╗███╗   ██╗██╗██╗  ██╗
- ╚══███╔╝██╔════╝████╗  ██║████╗  ██║██║╚██╗██╔╝
-   ███╔╝ █████╗  ██╔██╗ ██║██╔██╗ ██║██║ ╚███╔╝ 
-  ███╔╝  ██╔══╝  ██║╚██╗██║██║╚██╗██║██║ ██╔██╗ 
- ███████╗███████╗██║ ╚████║██║ ╚████║██║██╔╝ ██╗
- ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝ v1.12.5
-    \033[0m\033[91m              ╔═ TOXIC RAID SYSTEM ═╗\033[0m
-    """)
-
-def progress(stage):
-    print(f"   \033[90m└─> {stage}\033[0m")
-    for i in range(1, 41):
-        bar = "█" * i + "░" * (40 - i)
-        print(f"\r   \033[93m[{bar}] {i*2.5:.1f}%\033[0m", end="", flush=True)
-        time.sleep(random.uniform(0.03, 0.09))
-    print("\n")
-
-def change_delay():
-    global DELAY, MESSAGES
-    try:
-        new = float(input(f"   Текущая: {DELAY}s → Новая (0.1-5.0): ").replace(",","."))
-        if 0.1 <= new <= 5.0:
-            DELAY = new
-            MESSAGES = [(m,new) for m,_ in MESSAGES]
-            with open(CONFIG,"r",encoding="utf-8") as f: lines = f.readlines()
-            lines[-1] = str(new)+"\n"
-            with open(CONFIG,"w",encoding="utf-8") as f: f.writelines(lines)
-            t(f"   Задержка: \033[92m{new}s\033[0m")
-    except: t("   Ошибка"); time.sleep(2)
-
-def menu():
-    while True:
-        clear(); banner()
-        print(f"   \033[90mПользователь:\033[0m \033[96m{current_user}\033[0m    \033[90mЗадержка:\033[0m \033[93m{DELAY}s\033[0m\n")
-        print("   \033[95m╔══════════════════════════════════╗\033[0m")
-        print("   \033[95m║ 1. Начать рейд (f7)             ║\033[0m")
-        print("   \033[95m║ 2. Сменить задержку             ║\033[0m")
-        print("   \033[95m║ 3. Выйти с аккаунта             ║\033[0m")
-        print("   \033[95m║ 4. Полный выход                 ║\033[0m")
-        print("   \033[95m╚══════════════════════════════════╝\033[0m")
-        ch = input("\n   \033[90mВыбор → \033[0m")
-        if ch == "1": input("\n   Перейди в чат → f7 → enter...")
-        elif ch == "2": change_delay()
-        elif ch == "3":
-            if os.path.exists(CONFIG): os.remove(CONFIG)
-            t("   Сессия удалена"); time.sleep(2)
-            os.execv(sys.executable, [sys.executable] + sys.argv)
-        elif ch == "4": sys.exit()
-
-def spam():
-    global spam_active
-    if spam_active: return
-    spam_active = True
-    stop_event.clear()
-    for i in range(5,0,-1):
-        print(f"\r   Запуск через {i}...", end="", flush=True); time.sleep(1)
-    clear()
-    print("\033[91m   РЕЙД АКТИВИРОВАН | f8 — стоп\033[0m")
-    while not stop_event.is_set():
-        for txt,_ in MESSAGES:
-            if stop_event.is_set(): break
-            keyboard.write(txt)
-            keyboard.press_and_release("enter")
-            time.sleep(DELAY)
-    spam_active = False
-
-keyboard.add_hotkey("f7", lambda: threading.Thread(target=spam,daemon=True).start())
-keyboard.add_hotkey("f8", stop_event.set)
-
-# === СТАРТ ===
-if not os.path.exists(FOLDER):
-    os.makedirs(FOLDER)
-    os.system(f'attrib +h "{FOLDER}"')
-
-clear(); banner()
-progress("Hook installation"); progress("Bypassing protections")
-progress("Loading toxic database"); progress("Initializing raid engine"); progress("Ready to raid")
-
-check_update()
-login()
-menu()
+    t("\033[91m   ДОСТУП ЗАПРЕЩЁН НАВСЕГДА\033[0m")
+    time.sleep(4)
+    sys.exit()
